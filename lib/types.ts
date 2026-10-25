@@ -46,10 +46,20 @@ export interface Producto {
   palabrasMeta: string[];
 }
 
+export type EstadoGestion = "nuevo" | "en_contacto" | "esperando" | "resuelta";
+
+/** Seguimiento que tú le das a un pedido con alerta (no viene de Dropi). */
+export interface Gestion {
+  estado: EstadoGestion;
+  nota?: string;
+  actualizado: string; // ISO
+}
+
 export interface BaseDatos {
   productos: Producto[];
   pedidos: Pedido[];
   pauta: PautaDia[];
+  gestiones?: Record<string, Gestion>; // por id de pedido
   ultimaActualizacion?: { dropi?: string; meta?: string };
 }
 

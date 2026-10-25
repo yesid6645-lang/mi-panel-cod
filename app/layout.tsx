@@ -10,7 +10,7 @@ const MENU = [
     seccion: "E-commerce",
     items: [
       { href: "/productos", label: "Productos" },
-      { href: "/logistica", label: "Gestión logística", pronto: true },
+      { href: "/logistica", label: "Gestión logística" },
       { href: "/mapa", label: "Mapa logístico", pronto: true },
     ],
   },
