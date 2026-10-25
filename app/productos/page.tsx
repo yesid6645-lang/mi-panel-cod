@@ -1,0 +1,144 @@
+import Link from "next/link";
+import { leer } from "@/lib/db";
+import { resumen, colorDevolucion, colorRoi, decision, type Color } from "@/lib/metrics";
+import { periodoDesdeParams, mismoTramoMesAnterior } from "@/lib/periodo";
+import { usd, pct, dec } from "@/lib/formato";
+import { Kpi } from "@/components/Kpi";
+import { SelectorMes } from "@/components/SelectorMes";
+import { BotonActualizar } from "@/components/BotonActualizar";
+
+export const dynamic = "force-dynamic";
+
+const TEXTO: Record<Color, string> = {
+  excelente: "text-emerald-600",
+  bien: "text-blue-600",
+  atencion: "text-amber-500",
+  malo: "text-red-500",
+  sinDatos: "text-gray-400",
+};
+const PUNTO: Record<Color, string> = {
+  excelente: "bg-excelente",
+  bien: "bg-bien",
+  atencion: "bg-atencion",
+  malo: "bg-malo",
+  sinDatos: "bg-sindatos",
+};
+const signo = (x: number): Color => (x > 0 ? "excelente" : x < 0 ? "malo" : "sinDatos");
+
+export default async function Productos({ searchParams }: { searchParams: Promise<{ mes?: string }> }) {
+  const { mes, periodo } = periodoDesdeParams(await searchParams);
+  const db = await leer();
+  const total = resumen(db.pedidos, db.pauta, periodo);
+  const previo = resumen(db.pedidos, db.pauta, mismoTramoMesAnterior(periodo));
+
+  const filas = db.productos
+    .map((p) => {
+      const pedidos = db.pedidos.filter((x) => x.productoId === p.id);
+      const pauta = db.pauta.filter((x) => x.productoId === p.id);
+      const r = resumen(pedidos, pauta, periodo);
+      return { p, r, d: decision(r) };
+    })
+    .sort((a, b) => b.r.ventas - a.r.ventas);
+
+  const d = total.dias || 1;
+  return (
+    <div className="mx-auto max-w-7xl space-y-6">
+      <header className="flex flex-wrap items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-semibold">Productos</h1>
+          <p className="text-sm text-gray-500">
+            {periodo.desde} → {periodo.hasta} · {total.dias} días
+          </p>
+        </div>
+        <SelectorMes mes={mes} base="/productos" />
+        <BotonActualizar desde={periodo.desde} hasta={periodo.hasta} ultima={db.ultimaActualizacion?.dropi && new Date(db.ultimaActualizacion.dropi).toLocaleString("es-CO", { timeZone: "America/Guayaquil" })} />
+      </header>
+
+      {db.pedidos.length === 0 && (
+        <div className="tarjeta p-6 text-sm text-gray-600">
+          Aún no hay datos. Corre <code>npm run seed</code> para ver datos de ejemplo, o configura tus tokens y dale a
+          Actualizar.
+        </div>
+      )}
+
+      <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <Kpi titulo="Ganancia bruta" valor={usd(total.bruta)} actual={total.bruta} anterior={previo.bruta} />
+        <Kpi titulo="Ganancia esperada" valor={usd(total.esperada)} actual={total.esperada} anterior={previo.esperada} />
+        <Kpi titulo="Ganancia confirmada" valor={usd(total.confirmada)} actual={total.confirmada} anterior={previo.confirmada} />
+        <Kpi titulo="Número de ventas" valor={String(total.ventas)} actual={total.ventas} anterior={previo.ventas} />
+        <Kpi titulo="Publicidad" valor={usd(total.publicidad)} actual={total.publicidad} anterior={previo.publicidad} menorEsMejor />
+        <Kpi titulo="Costo devoluciones" valor={usd(total.costoDevoluciones)} actual={total.costoDevoluciones} anterior={previo.costoDevoluciones} menorEsMejor />
+        <Kpi titulo="Gastos totales" valor={usd(total.gastosTotales)} actual={total.gastosTotales} anterior={previo.gastosTotales} menorEsMejor />
+        <Kpi titulo="Devoluciones" valor={String(total.devoluciones)} actual={total.devoluciones} anterior={previo.devoluciones} menorEsMejor />
+      </section>
+
+      <section className="tarjeta overflow-x-auto">
+        <table className="w-full min-w-[1100px] whitespace-nowrap text-sm tabular-nums">
+          <thead>
+            <tr className="border-b border-gray-200 text-left text-xs font-semibold uppercase text-gray-500">
+              {["Producto", "Ventas", "Chats", "Publicidad", "Entreg.", "Devol.", "C. dev.", "Bruta", "Esperada", "Confirmada", "% dev.", "Decisión"].map((h) => (
+                <th key={h} className="px-4 py-3">{h}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {filas.map(({ p, r, d: dec_ }) => (
+              <tr key={p.id} className="border-b border-gray-100 hover:bg-gray-50">
+                <td className="px-4 py-3 font-medium">
+                  <Link href={`/productos/${p.id}?mes=${mes}`} className="hover:underline">{p.nombre}</Link>
+                </td>
+                <td className="px-4 py-3">{r.ventas}</td>
+                <td className="px-4 py-3">{r.conversaciones}</td>
+                <td className="px-4 py-3">{usd(r.publicidad)}</td>
+                <td className="px-4 py-3 text-emerald-600">{r.entregados}</td>
+                <td className="px-4 py-3">{r.devoluciones}</td>
+                <td className="px-4 py-3 text-red-500">{usd(r.costoDevoluciones)}</td>
+                <td className="px-4 py-3">{usd(r.bruta)}</td>
+                <td className={`px-4 py-3 font-semibold ${TEXTO[signo(r.esperada)]}`}>{usd(r.esperada)}</td>
+                <td className={`px-4 py-3 font-semibold ${TEXTO[colorRoi(r.roiEntregados)]}`}>{usd(r.confirmada)}</td>
+                <td className={`px-4 py-3 ${TEXTO[colorDevolucion(r.pctDevolucion)]}`}>{pct(r.pctDevolucion)}</td>
+                <td className="px-4 py-3">
+                  <span className="rounded-full bg-gray-100 px-2 py-1 text-xs font-semibold">{dec_.decision}</span>
+                </td>
+              </tr>
+            ))}
+            <tr className="bg-gray-50 font-medium">
+              <td className="px-4 py-3">Promedio diario</td>
+              <td className="px-4 py-3">{dec(total.ventas / d)}</td>
+              <td className="px-4 py-3">{dec(total.conversaciones / d)}</td>
+              <td className="px-4 py-3">{usd(total.publicidad / d)}</td>
+              <td className="px-4 py-3">{dec(total.entregados / d)}</td>
+              <td className="px-4 py-3">{dec(total.devoluciones / d)}</td>
+              <td className="px-4 py-3 text-red-500">{usd(total.costoDevoluciones / d)}</td>
+              <td className="px-4 py-3">{usd(total.bruta / d)}</td>
+              <td className="px-4 py-3">{usd(total.esperada / d)}</td>
+              <td className="px-4 py-3">{usd(total.confirmada / d)}</td>
+              <td className="px-4 py-3">{pct(total.pctDevolucion)}</td>
+              <td />
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section className="tarjeta flex flex-wrap gap-6 p-4 text-xs text-gray-600">
+        {(
+          [
+            ["excelente", "Excelente", "Muy por encima del objetivo"],
+            ["bien", "Bien", "En rango rentable"],
+            ["atencion", "Atención", "En el límite, conviene revisar"],
+            ["malo", "Malo", "Fuera de rango, requiere acción"],
+            ["sinDatos", "Sin datos", "Aún no hay suficiente información"],
+          ] as const
+        ).map(([c, t, s]) => (
+          <div key={c} className="flex items-start gap-2">
+            <span className={`mt-1 h-2 w-2 rounded-full ${PUNTO[c]}`} />
+            <div>
+              <div className="font-semibold text-gray-800">{t}</div>
+              {s}
+            </div>
+          </div>
+        ))}
+      </section>
+    </div>
+  );
+}
