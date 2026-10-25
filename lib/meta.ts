@@ -7,9 +7,11 @@ const VERSION = "v21.0";
 const ACCION_CHAT = "onsite_conversion.messaging_conversation_started_7d";
 
 export async function traerPauta(desde: string, hasta: string, productos: Producto[]): Promise<PautaDia[]> {
+  // En el entorno de Claude el token lo agrega la red (secreto Bearer); en tu computador va en META_ACCESS_TOKEN
   const token = process.env.META_ACCESS_TOKEN;
   const cuenta = process.env.META_AD_ACCOUNT_ID;
-  if (!token || !cuenta) throw new Error("Faltan META_ACCESS_TOKEN o META_AD_ACCOUNT_ID.");
+  if (!cuenta) throw new Error("Falta META_AD_ACCOUNT_ID (act_XXXX).");
+  const headers: Record<string, string> = token ? { Authorization: `Bearer ${token}` } : {};
   const copPorUsd = Number(process.env.COP_PER_USD ?? 4000);
 
   const params = new URLSearchParams({
@@ -18,13 +20,12 @@ export async function traerPauta(desde: string, hasta: string, productos: Produc
     time_range: JSON.stringify({ since: desde, until: hasta }),
     fields: "campaign_name,spend,actions,account_currency",
     limit: "500",
-    access_token: token,
   });
   let url: string | undefined = `https://graph.facebook.com/${VERSION}/${cuenta}/insights?${params}`;
   const porClave = new Map<string, PautaDia>();
 
   while (url) {
-    const res = await fetch(url);
+    const res = await fetch(url, { headers });
     const json: any = await res.json();
     if (!res.ok) throw new Error(`Meta respondió ${res.status}: ${json.error?.message ?? ""}`);
     for (const fila of json.data ?? []) {
