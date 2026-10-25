@@ -1,21 +1,22 @@
 import type { Pedido } from "./types";
 import { agruparEstado } from "./estados";
 
-// Cliente de la API de integraciones de Dropi, autenticado con el token de
-// "Mis integraciones". OJO: la ruta y los nombres de campo salen de
-// documentación no oficial; hay que confirmarlos con una llamada real y
-// ajustar RUTA_PEDIDOS y mapearPedido() si difieren.
+// Cliente de la API de integraciones de Dropi Ecuador, autenticado con el token
+// de "Mis integraciones" en el encabezado dropi-integration-key. Ruta y campos
+// confirmados con una llamada real (oct 2026). En el entorno de Claude el
+// encabezado lo agrega la red, por eso DROPI_TOKEN es opcional.
 
 const RUTA_PEDIDOS = "/integrations/orders/myorders";
 
 function config() {
   const token = process.env.DROPI_TOKEN;
-  if (!token) throw new Error("Falta DROPI_TOKEN (Dropi → Mis integraciones).");
-  return { token, base: process.env.DROPI_API_URL ?? "https://api.dropi.ec" };
+  const headers: Record<string, string> = { Accept: "application/json" };
+  if (token) headers["dropi-integration-key"] = token;
+  return { headers, base: process.env.DROPI_API_URL ?? "https://api.dropi.ec" };
 }
 
 export async function traerPedidos(desde: string, hasta: string): Promise<Pedido[]> {
-  const { token, base } = config();
+  const { headers, base } = config();
   const pedidos: Pedido[] = [];
   const tam = 100;
   for (let start = 0; ; start += tam) {
@@ -26,10 +27,12 @@ export async function traerPedidos(desde: string, hasta: string): Promise<Pedido
       result_number: String(tam),
       start: String(start),
     }).toString();
-    const res = await fetch(url, { headers: { "dropi-integration-key": token, Accept: "application/json" } });
+    const res = await fetch(url, { headers });
+    if (res.status === 401 || res.status === 403)
+      throw new Error("Dropi rechazó el token: revisa DROPI_TOKEN o el secreto del entorno.");
     if (!res.ok) throw new Error(`Dropi respondió ${res.status}: ${(await res.text()).slice(0, 300)}`);
     const json = await res.json();
-    const lote: unknown[] = json.objects ?? json.data ?? json.orders ?? [];
+    const lote: unknown[] = json.objects ?? [];
     pedidos.push(...lote.map((o) => mapearPedido(o as Record<string, any>)));
     if (lote.length < tam) break;
   }
@@ -39,29 +42,33 @@ export async function traerPedidos(desde: string, hasta: string): Promise<Pedido
 const num = (x: unknown) => (x == null || x === "" ? 0 : Number(x));
 
 export function mapearPedido(o: Record<string, any>): Pedido {
-  const det = o.orderdetails?.[0] ?? o.items?.[0] ?? {};
-  const prod = det.product ?? {};
-  const estado = String(o.status ?? o.estado ?? "");
-  const unidades = (o.orderdetails ?? o.items ?? []).reduce((s: number, d: any) => s + num(d.quantity), 0) || 1;
+  const detalles: any[] = o.orderdetails ?? [];
+  const prod = detalles[0]?.product ?? {};
+  const unidades = detalles.reduce((s, d) => s + num(d.quantity), 0) || 1;
+  const estado = String(o.status ?? "");
+  const nombre = String(prod.name ?? "Sin producto");
   return {
     id: String(o.id),
-    guia: o.shipping_guide ?? o.tracking_code ?? undefined,
-    creadoEn: new Date(o.created_at).toISOString(),
-    productoId: String(prod.id ?? det.product_id ?? "sin-producto"),
-    productoNombre: String(prod.name ?? det.name ?? "Sin producto"),
-    variante: String(det.variation?.name ?? prod.name ?? ""),
+    guia: o.shipping_guide ?? undefined,
+    // Dropi entrega la hora local de Ecuador sin zona; se guarda tal cual
+    creadoEn: String(o.created_at),
+    productoId: String(prod.id ?? detalles[0]?.product_id ?? "sin-producto"),
+    productoNombre: nombre,
+    variante: [detalles[0]?.variation?.name ?? nombre, unidades > 1 ? `x${unidades}` : ""].filter(Boolean).join(" "),
     unidades,
     total: num(o.total_order),
-    costoProducto: (o.orderdetails ?? []).reduce((s: number, d: any) => s + num(d.supplier_price) * num(d.quantity), 0),
+    // sale_price es lo que el proveedor te cobra por unidad
+    costoProducto: detalles.reduce((s, d) => s + num(d.variation?.sale_price ?? d.product?.sale_price) * num(d.quantity), 0),
     flete: num(o.shipping_amount),
-    costoDevolucion: num(o.return_shipping_amount ?? o.shipping_amount),
-    fees: num(o.fenix_fee) + num(o.confio_fee),
+    // Dropi no manda el flete de devolución aparte; WinTrack usa el mismo valor del flete
+    costoDevolucion: num(o.shipping_amount),
+    fees: 0,
     estado,
     grupo: agruparEstado(estado),
-    transportadora: String(o.distribution_company?.name ?? o.carrier ?? ""),
+    transportadora: String(o.distribution_company?.name ?? o.shipping_company ?? ""),
     ciudad: String(o.city ?? ""),
     cliente: [o.name, o.surname].filter(Boolean).join(" "),
     telefono: String(o.phone ?? ""),
-    ultimoMovimiento: o.updated_at ? new Date(o.updated_at).toISOString() : undefined,
+    ultimoMovimiento: o.updated_at ? String(o.updated_at) : undefined,
   };
 }

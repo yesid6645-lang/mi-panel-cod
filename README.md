@@ -30,3 +30,6 @@ Luego, en Productos, dale a **Actualizar Dropi y Meta**.
 | `lib/meta.ts` | Gasto y chats por campaña, asignados a cada producto |
 | `lib/sync.ts` | Lo que hace el botón Actualizar |
 | `lib/db.ts` | Guardado en `data/db.json` |
+
+> En el entorno en la nube de Claude, el `fetch` de Node necesita `NODE_USE_ENV_PROXY=1` para salir por el proxy
+> (p. ej. `NODE_USE_ENV_PROXY=1 npm run actualizar`). En tu computador no hace falta.
