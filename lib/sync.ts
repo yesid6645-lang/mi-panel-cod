@@ -33,7 +33,7 @@ export async function actualizar(per: Periodo): Promise<ResultadoSync> {
   }
 
   try {
-    const filas = await traerPauta(per.desde, per.hasta, db.productos);
+    const filas = await traerPauta(per.desde, per.hasta, db.productos, db.meta);
     db.pauta = [...db.pauta.filter((x) => x.fecha < per.desde || x.fecha > per.hasta), ...filas];
     db.ultimaActualizacion = { ...db.ultimaActualizacion, meta: ahora };
     out.meta = { ok: true, filas: filas.length };

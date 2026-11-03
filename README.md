@@ -11,12 +11,24 @@ npm run dev       # http://localhost:3000
 npm test          # comprueba las fórmulas contra los números de WinTrack
 ```
 
-## Conectar Dropi y Meta
+## Conectar Dropi
 
-Copia `.env.example` a `.env.local` y llena:
+Copia `.env.example` a `.env.local` y pon `DROPI_TOKEN` (Dropi → Mis integraciones → token).
 
-- `DROPI_TOKEN`: Dropi → Mis integraciones → token
-- `META_ACCESS_TOKEN` y `META_AD_ACCOUNT_ID` (act_XXXX)
+## Conectar Meta (una sola vez)
+
+1. En https://developers.facebook.com/apps/ abre tu app → **Casos de uso** → **Agregar caso de uso** →
+   **Inicio de sesión con Facebook para empresas**.
+2. Dentro de ese caso de uso → **Configuraciones** → **Crear configuración**:
+   tipo de token **Token de acceso de usuario**, activos **Cuentas publicitarias**, permiso **ads_read**.
+   Copia el **ID de configuración** → `META_LOGIN_CONFIG_ID`.
+3. En **Configuración → URI de redireccionamiento de OAuth válidos** agrega
+   `http://localhost:3000/api/meta/callback`.
+4. En **Configuración de la app → Básica** copia el **Identificador de la app** → `META_APP_ID`
+   y la **Clave secreta** → `META_APP_SECRET`.
+5. Abre el panel → **Productos y conexiones** → **Conectar Meta**, acepta, y marca qué campañas son de cada producto.
+
+El permiso dura ~60 días; el panel muestra un aviso 7 días antes para que le des a **Renovar conexión**.
 
 Luego, en Productos, dale a **Actualizar Dropi y Meta**.
 

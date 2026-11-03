@@ -42,8 +42,24 @@ export interface PautaDia {
 export interface Producto {
   id: string;
   nombre: string;
-  // Palabras que identifican sus campañas en Meta (nombre de campaña contiene…)
+  // Campañas de Meta asignadas a mano en Configuración (ids). Si está vacío se
+  // usan las palabras: el nombre de campaña contiene alguna de palabrasMeta.
+  campanasMeta?: string[];
   palabrasMeta: string[];
+}
+
+export interface CuentaMeta {
+  id: string; // act_XXXX
+  nombre: string;
+  moneda: string;
+}
+
+/** Conexión hecha con "Conectar Meta" (inicio de sesión con Facebook). */
+export interface ConexionMeta {
+  token: string;
+  expira: string; // ISO; el token de usuario dura ~60 días
+  usuario?: string;
+  cuentas: CuentaMeta[];
 }
 
 export type EstadoGestion = "nuevo" | "en_contacto" | "esperando" | "resuelta";
@@ -60,6 +76,7 @@ export interface BaseDatos {
   pedidos: Pedido[];
   pauta: PautaDia[];
   gestiones?: Record<string, Gestion>; // por id de pedido
+  meta?: ConexionMeta;
   ultimaActualizacion?: { dropi?: string; meta?: string };
 }
 

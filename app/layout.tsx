@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import "./globals.css";
+import { leer } from "@/lib/db";
+import { diasParaVencer, DIAS_AVISO } from "@/lib/meta";
 
 export const metadata: Metadata = { title: "Mi Panel COD" };
 
@@ -14,10 +16,14 @@ const MENU = [
       { href: "/mapa", label: "Mapa logístico", pronto: true },
     ],
   },
-  { seccion: "Herramientas", items: [{ href: "/configuracion", label: "Productos y conexiones", pronto: true }] },
+  { seccion: "Herramientas", items: [{ href: "/configuracion", label: "Productos y conexiones" }] },
 ];
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  // Recordatorio: el permiso de Meta dura ~60 días
+  const dias = diasParaVencer((await leer()).meta);
+  const aviso =
+    dias === null ? null : dias < 0 ? "Tu conexión con Meta venció: la pauta no se está actualizando." : dias <= DIAS_AVISO ? `Tu conexión con Meta vence en ${dias} días.` : null;
   return (
     <html lang="es">
       <body className="min-h-screen md:flex">
@@ -43,7 +49,14 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             ))}
           </nav>
         </aside>
-        <main className="min-w-0 flex-1 p-4 md:p-8">{children}</main>
+        <main className="min-w-0 flex-1 p-4 md:p-8">
+          {aviso && (
+            <Link href="/configuracion" className="mx-auto mb-6 block max-w-7xl rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
+              ⚠️ {aviso} <b>Renovar ahora →</b>
+            </Link>
+          )}
+          {children}
+        </main>
       </body>
     </html>
   );
