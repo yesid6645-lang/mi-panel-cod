@@ -5,7 +5,7 @@ import { periodoDesdeParams, mismoTramoMesAnterior } from "@/lib/periodo";
 import { dineroEn, pct, veces } from "@/lib/formato";
 import { variacion } from "@/lib/metrics";
 import { SelectorMes } from "@/components/SelectorMes";
-import { elegirTienda } from "@/app/configuracion/acciones";
+import { elegirTienda } from "@/app/(panel)/configuracion/acciones";
 import type { Tienda } from "@/lib/types";
 
 export const dynamic = "force-dynamic";

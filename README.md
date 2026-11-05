@@ -48,3 +48,19 @@ Luego, en Productos, dale a **Actualizar Dropi y Meta**.
 
 > En el entorno en la nube de Claude, el `fetch` de Node necesita `NODE_USE_ENV_PROXY=1` para salir por el proxy
 > (p. ej. `NODE_USE_ENV_PROXY=1 npm run actualizar`). En tu computador no hace falta.
+
+## Publicar (Supabase + Netlify)
+
+1. **Supabase** (https://supabase.com → New project). En **SQL Editor** pega `supabase/esquema.sql` y dale **Run**.
+2. **Usuarios**: Authentication → Users → **Add user** (correo y contraseña) para cada socio.
+   En Authentication → Sign In / Providers, desactiva **Allow new users to sign up**.
+3. **Netlify** (https://app.netlify.com → Add new site → Import from GitHub → `mi-panel-cod`).
+   En Site configuration → Environment variables agrega: `SUPABASE_URL`, `SUPABASE_ANON_KEY`,
+   `SUPABASE_SERVICE_ROLE_KEY`, `CORREOS_PERMITIDOS`, `META_APP_ID`, `META_APP_SECRET`,
+   `META_LOGIN_CONFIG_ID`, `APP_URL` (la dirección del sitio, p. ej. `https://crm-service.netlify.app`) y `COP_PER_USD`.
+4. En la app de Meta agrega `https://TU-SITIO.netlify.app/api/meta/callback` a los URI de redireccionamiento.
+5. Entra al sitio, crea las tiendas con sus tokens de Dropi y dale a Actualizar. Si ya tenías datos en tu
+   computador, `npm run subir` los copia a Supabase (con las variables de Supabase en `.env.local`).
+
+Con Supabase configurado, los datos se guardan allá y el panel pide inicio de sesión; sin esas variables
+usa `data/db.json` y no pide sesión.

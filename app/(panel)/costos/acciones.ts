@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { leer, guardar } from "@/lib/db";
+import { leer, guardarProductos } from "@/lib/db";
 import type { CostosProducto } from "@/lib/types";
 
 const numero = (v: FormDataEntryValue | null) => {
@@ -11,8 +11,8 @@ const numero = (v: FormDataEntryValue | null) => {
 
 export async function guardarCostos(form: FormData) {
   const tiendaId = String(form.get("tiendaId"));
-  const db = await leer();
-  for (const p of db.productos.filter((x) => x.tiendaId === tiendaId)) {
+  const { productos } = await leer(tiendaId);
+  for (const p of productos) {
     const c: CostosProducto = {
       costoUnitario: numero(form.get(`costoUnitario:${p.id}`)),
       extraPorPedido: numero(form.get(`extraPorPedido:${p.id}`)),
@@ -21,6 +21,6 @@ export async function guardarCostos(form: FormData) {
     };
     p.costos = Object.values(c).some((x) => x !== undefined && !Number.isNaN(x)) ? c : undefined;
   }
-  await guardar(db);
+  await guardarProductos(productos);
   revalidatePath("/", "layout");
 }

@@ -12,7 +12,7 @@ const campo = "w-24 rounded-lg border border-gray-200 px-2 py-1.5 text-right tex
 
 export default async function Costos() {
   const { db, tienda } = await leerTienda();
-  const crudos = (await leer()).pedidos.filter((p) => p.tiendaId === tienda?.id);
+  const crudos = tienda ? (await leer(tienda.id)).pedidos : [];
   const { periodo } = periodoDesdeParams({});
 
   return (

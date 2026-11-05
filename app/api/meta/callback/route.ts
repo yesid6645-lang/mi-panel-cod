@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { conectar, appUrl } from "@/lib/meta";
-import { leer, guardar } from "@/lib/db";
+import { guardarMeta } from "@/lib/db";
 
 // Facebook vuelve aquí después de que aceptas el permiso.
 export async function GET(req: NextRequest) {
@@ -12,9 +12,7 @@ export async function GET(req: NextRequest) {
     return volver(`error=${encodeURIComponent("El inicio de sesión expiró; inténtalo de nuevo.")}`);
 
   try {
-    const db = await leer();
-    db.meta = await conectar(p.get("code")!);
-    await guardar(db);
+    await guardarMeta(await conectar(p.get("code")!));
     const res = volver("conectado=1");
     res.cookies.delete("meta_state");
     return res;

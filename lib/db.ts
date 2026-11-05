@@ -1,49 +1,17 @@
-import { promises as fs } from "node:fs";
-import path from "node:path";
-import type { BaseDatos } from "./types";
+import { archivo } from "./almacen/archivo";
+import { supabase } from "./almacen/supabase";
 
-// Almacenamiento en un archivo JSON local. Antes de publicar el panel se cambia
-// por Supabase sin tocar las pantallas, porque todo pasa por leer()/guardar().
+// Con SUPABASE_URL y SUPABASE_SERVICE_ROLE_KEY se usa Supabase (panel publicado);
+// sin ellas, el archivo data/db.json (panel en tu computador).
+export const usaSupabase = () => !!(process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY);
+const almacen = () => (usaSupabase() ? supabase : archivo);
 
-const ARCHIVO = path.join(process.cwd(), "data", "db.json");
-const VACIA: BaseDatos = { tiendas: [], productos: [], pedidos: [], pauta: [] };
-
-export async function leer(): Promise<BaseDatos> {
-  let db: BaseDatos;
-  try {
-    db = JSON.parse(await fs.readFile(ARCHIVO, "utf8"));
-  } catch {
-    return structuredClone(VACIA);
-  }
-  return migrar(db);
-}
-
-export async function guardar(db: BaseDatos): Promise<void> {
-  await fs.mkdir(path.dirname(ARCHIVO), { recursive: true });
-  await fs.writeFile(ARCHIVO, JSON.stringify(db, null, 2));
-}
-
-/** Datos de antes de tener varias tiendas: todo pasa a una tienda "Zorvix Ecuador". */
-function migrar(db: BaseDatos & { ultimaActualizacion?: { dropi?: string; meta?: string } }): BaseDatos {
-  if (db.tiendas) return db;
-  const id = "zorvix-ecuador";
-  const pref = (x: string) => (x.startsWith(id + "-") ? x : `${id}-${x}`);
-  return {
-    tiendas: [
-      {
-        id,
-        nombre: "Zorvix Ecuador",
-        pais: "EC",
-        moneda: "USD",
-        dropiUrl: "https://api.dropi.ec",
-        cuentasMeta: [],
-        ultimaActualizacion: db.ultimaActualizacion,
-      },
-    ],
-    productos: db.productos.map((p) => ({ ...p, id: pref(p.id), tiendaId: id })),
-    pedidos: db.pedidos.map((p) => ({ ...p, id: pref(p.id), productoId: pref(p.productoId), tiendaId: id })),
-    pauta: db.pauta.map((p) => ({ ...p, productoId: pref(p.productoId), tiendaId: id })),
-    gestiones: Object.fromEntries(Object.entries(db.gestiones ?? {}).map(([k, v]) => [pref(k), v])),
-    meta: db.meta,
-  };
-}
+export const leer = (tiendaId?: string) => almacen().leer(tiendaId);
+export const leerConfig = () => almacen().leerConfig();
+export const guardarTienda: typeof archivo.guardarTienda = (t) => almacen().guardarTienda(t);
+export const eliminarTienda: typeof archivo.eliminarTienda = (id) => almacen().eliminarTienda(id);
+export const guardarProductos: typeof archivo.guardarProductos = (ps) => almacen().guardarProductos(ps);
+export const guardarPedidos: typeof archivo.guardarPedidos = (ps) => almacen().guardarPedidos(ps);
+export const reemplazarPauta: typeof archivo.reemplazarPauta = (...a) => almacen().reemplazarPauta(...a);
+export const guardarGestion: typeof archivo.guardarGestion = (id, g) => almacen().guardarGestion(id, g);
+export const guardarMeta: typeof archivo.guardarMeta = (m) => almacen().guardarMeta(m);

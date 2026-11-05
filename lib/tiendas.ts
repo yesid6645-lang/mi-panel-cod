@@ -1,5 +1,5 @@
 import { cookies } from "next/headers";
-import { leer } from "./db";
+import { leer, leerConfig } from "./db";
 import { fijarMoneda } from "./formato";
 import type { BaseDatos, Tienda } from "./types";
 import { aplicarCostos } from "./costos";
@@ -32,9 +32,10 @@ export function vista(db: BaseDatos, tiendaId: string): BaseDatos {
  * También deja fijada la moneda con la que se formatean los montos.
  */
 export async function leerTienda(): Promise<{ db: BaseDatos; tienda: Tienda | null; tiendas: Tienda[] }> {
-  const completa = await leer();
+  const config = await leerConfig();
   const elegida = (await cookies()).get(COOKIE_TIENDA)?.value;
-  const tienda = completa.tiendas.find((t) => t.id === elegida) ?? completa.tiendas[0] ?? null;
+  const tienda = config.tiendas.find((t) => t.id === elegida) ?? config.tiendas[0] ?? null;
+  const completa = tienda ? await leer(tienda.id) : { ...config, productos: [], pedidos: [], pauta: [] };
   fijarMoneda(tienda?.moneda ?? "USD");
   return { db: tienda ? vista(completa, tienda.id) : { ...completa, productos: [], pedidos: [], pauta: [] }, tienda, tiendas: completa.tiendas };
 }

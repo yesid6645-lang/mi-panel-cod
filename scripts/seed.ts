@@ -1,8 +1,8 @@
 // Agrega una "Tienda demo" con datos de ejemplo (sept–oct 2026) para ver el
 // panel sin conectar nada. No toca las tiendas reales. Uso: npm run seed
-import { leer, guardar } from "../lib/db";
+import { eliminarTienda, guardarTienda, guardarProductos, guardarPedidos, reemplazarPauta } from "../lib/db";
 import { agruparEstado } from "../lib/estados";
-import type { BaseDatos, Pedido, PautaDia } from "../lib/types";
+import type { Pedido, PautaDia } from "../lib/types";
 
 let semilla = 7;
 const azar = () => ((semilla = (semilla * 16807) % 2147483647) - 1) / 2147483646;
@@ -69,15 +69,10 @@ for (let d = new Date("2026-09-01T00:00:00Z"); d <= hoy; d.setUTCDate(d.getUTCDa
 }
 
 (async () => {
-  const db: BaseDatos = await leer();
-  const fuera = <X extends { tiendaId: string }>(xs: X[]) => xs.filter((x) => x.tiendaId !== T);
-  db.tiendas = [
-    ...db.tiendas.filter((t) => t.id !== T),
-    { id: T, nombre: "Tienda demo", pais: "EC", moneda: "USD", dropiUrl: "", cuentasMeta: [], ultimaActualizacion: { dropi: hoy.toISOString() } },
-  ];
-  db.productos = [...fuera(db.productos), ...productos.map(({ id, nombre, palabrasMeta }) => ({ id, tiendaId: T, nombre, palabrasMeta }))];
-  db.pedidos = [...fuera(db.pedidos), ...pedidos];
-  db.pauta = [...fuera(db.pauta), ...pauta];
-  await guardar(db);
+  await eliminarTienda(T);
+  await guardarTienda({ id: T, nombre: "Tienda demo", pais: "EC", moneda: "USD", dropiUrl: "", cuentasMeta: [], ultimaActualizacion: { dropi: hoy.toISOString() } });
+  await guardarProductos(productos.map(({ id, nombre, palabrasMeta }) => ({ id, tiendaId: T, nombre, palabrasMeta })));
+  await guardarPedidos(pedidos);
+  await reemplazarPauta(T, "2000-01-01", "2100-01-01", pauta);
   console.log(`Tienda demo: ${pedidos.length} pedidos, ${pauta.length} días de pauta.`);
 })();

@@ -1,7 +1,7 @@
 import { cookies } from "next/headers";
 import Link from "next/link";
 import { COOKIE_TIENDA } from "@/lib/tiendas";
-import { elegirTienda } from "@/app/configuracion/acciones";
+import { elegirTienda } from "@/app/(panel)/configuracion/acciones";
 
 /** Selector de tienda del menú: cada pantalla muestra solo la tienda elegida. */
 export async function SelectorTienda({ tiendas }: { tiendas: { id: string; nombre: string }[] }) {
