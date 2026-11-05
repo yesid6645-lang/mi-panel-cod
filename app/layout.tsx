@@ -37,16 +37,19 @@ export default async function RootLayout({ children }: { children: React.ReactNo
               <div key={s.seccion}>
                 <div className="etiqueta mb-2 hidden md:block">{s.seccion}</div>
                 <div className="flex gap-1 md:block md:space-y-1">
-                  {s.items.map((i) => (
-                    <Link
-                      key={i.href}
-                      href={i.href}
-                      className="flex items-center justify-between whitespace-nowrap rounded-lg px-3 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                    >
-                      {i.label}
-                      {i.pronto && <span className="ml-2 text-[10px] text-gray-400">pronto</span>}
-                    </Link>
-                  ))}
+                  {s.items.map((i) =>
+                    i.pronto ? (
+                      // Pantallas aún no construidas: se ven pero no se pueden abrir
+                      <span key={i.href} className="flex cursor-default items-center justify-between whitespace-nowrap rounded-lg px-3 py-2 text-sm text-gray-400">
+                        {i.label}
+                        <span className="ml-2 text-[10px]">pronto</span>
+                      </span>
+                    ) : (
+                      <Link key={i.href} href={i.href} className="flex items-center justify-between whitespace-nowrap rounded-lg px-3 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                        {i.label}
+                      </Link>
+                    ),
+                  )}
                 </div>
               </div>
             ))}

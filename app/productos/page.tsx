@@ -54,10 +54,21 @@ export default async function Productos({ searchParams }: { searchParams: Promis
         <BotonActualizar desde={periodo.desde} hasta={periodo.hasta} tiendaId={tienda?.id} ultima={tienda?.ultimaActualizacion?.dropi && new Date(tienda.ultimaActualizacion.dropi).toLocaleString("es-CO", { timeZone: "America/Guayaquil" })} />
       </header>
 
-      {db.pedidos.length === 0 && (
-        <div className="tarjeta p-6 text-sm text-gray-600">
-          Aún no hay datos de esta tienda. Pon su token de Dropi en <a href="/configuracion" className="text-blue-600 underline">Tiendas y conexiones</a> y dale a
-          Actualizar.
+      {!tienda && (
+        <div className="tarjeta space-y-3 border-blue-200 bg-blue-50 p-6 text-sm text-gray-700">
+          <h2 className="text-lg font-semibold text-gray-900">👋 Bienvenido. Empecemos por tu primera tienda</h2>
+          <ol className="list-decimal space-y-1 pl-5">
+            <li>Crea la tienda con su país y su token de Dropi (Dropi → Mis integraciones).</li>
+            <li>Vuelve aquí y dale a <b>Actualizar Dropi y Meta</b>.</li>
+            <li>Haz clic en el nombre de un producto para ver su análisis completo.</li>
+          </ol>
+          <a href="/configuracion?nueva=1" className="inline-block rounded-xl bg-blue-600 px-4 py-2 font-medium text-white hover:bg-blue-700">Crear mi primera tienda</a>
+        </div>
+      )}
+      {tienda && db.pedidos.length === 0 && (
+        <div className="tarjeta border-amber-200 bg-amber-50 p-6 text-sm text-gray-700">
+          <b>{tienda.nombre}</b> aún no tiene pedidos cargados. Dale a <b>↻ Actualizar Dropi y Meta</b> (arriba a la derecha) para traerlos.
+          Si sale un error, revisa su token en <a href="/configuracion" className="text-blue-600 underline">Tiendas y conexiones</a>.
         </div>
       )}
 
