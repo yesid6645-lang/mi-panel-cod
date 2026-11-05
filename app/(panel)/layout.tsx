@@ -23,7 +23,20 @@ const MENU: { seccion: string; items: ItemMenu[] }[] = [
 
 export default async function LayoutPanel({ children }: { children: React.ReactNode }) {
   // Recordatorio: el permiso de Meta dura ~60 días
-  const db = await leerConfig();
+  let db: Awaited<ReturnType<typeof leerConfig>>;
+  try {
+    db = await leerConfig();
+  } catch (e) {
+    return (
+      <div className="mx-auto max-w-xl space-y-3 p-8">
+        <h1 className="text-xl font-semibold">No se pudo conectar con la base de datos</h1>
+        <p className="rounded-xl bg-red-50 p-4 font-mono text-sm text-red-700">{(e as Error).message}</p>
+        <p className="text-sm text-gray-600">
+          Revisa las variables de Supabase en Netlify. En <a href="/diagnostico" className="text-blue-600 underline">/diagnostico</a> ves cuál falla.
+        </p>
+      </div>
+    );
+  }
   const dias = diasParaVencer(db.meta);
   const aviso =
     dias === null ? null : dias < 0 ? "Tu conexión con Meta venció: la pauta no se está actualizando." : dias <= DIAS_AVISO ? `Tu conexión con Meta vence en ${dias} días.` : null;

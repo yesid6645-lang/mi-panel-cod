@@ -25,7 +25,7 @@ export async function middleware(req: NextRequest) {
   const correo = data.user?.email?.toLowerCase();
   const autorizado = !!correo && (permitidos.length === 0 || permitidos.includes(correo));
 
-  if (req.nextUrl.pathname.startsWith("/login")) return res;
+  if (req.nextUrl.pathname.startsWith("/login") || req.nextUrl.pathname.startsWith("/diagnostico")) return res;
   if (!autorizado) {
     if (req.nextUrl.pathname.startsWith("/api/")) return NextResponse.json({ error: "Inicia sesión" }, { status: 401 });
     const login = new URL("/login", req.url);

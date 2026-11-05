@@ -9,7 +9,7 @@ import type { Almacen } from "./tipo";
 
 let cliente: SupabaseClient | null = null;
 const db = () =>
-  (cliente ??= createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!, {
+  (cliente ??= createClient(process.env.SUPABASE_URL!.replace(/\/rest\/v1\/?$/, "").replace(/\/$/, ""), process.env.SUPABASE_SERVICE_ROLE_KEY!, {
     auth: { persistSession: false },
   }));
 
