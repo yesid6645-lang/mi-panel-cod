@@ -1,6 +1,6 @@
-// Genera datos de ejemplo (sept–oct 2026) para ver el panel sin conectar nada.
-// Uso: npm run seed
-import { guardar } from "../lib/db";
+// Agrega una "Tienda demo" con datos de ejemplo (sept–oct 2026) para ver el
+// panel sin conectar nada. No toca las tiendas reales. Uso: npm run seed
+import { leer, guardar } from "../lib/db";
 import { agruparEstado } from "../lib/estados";
 import type { BaseDatos, Pedido, PautaDia } from "../lib/types";
 
@@ -8,9 +8,10 @@ let semilla = 7;
 const azar = () => ((semilla = (semilla * 16807) % 2147483647) - 1) / 2147483646;
 const elegir = <T>(xs: T[]) => xs[Math.floor(azar() * xs.length)];
 
+const T = "demo";
 const productos = [
-  { id: "belani", nombre: "Belani", palabrasMeta: ["belani"], precio: [25, 35, 45], costo: 6, ventasDia: 3, chatsPorVenta: 14, cpa: 6 },
-  { id: "gmmy", nombre: "Gmmy", palabrasMeta: ["gmmy"], precio: [29, 49], costo: 7, ventasDia: 0.6, chatsPorVenta: 2, cpa: 0.2 },
+  { id: "demo-belani", nombre: "Belani", palabrasMeta: ["belani"], precio: [25, 35, 45], costo: 6, ventasDia: 3, chatsPorVenta: 14, cpa: 6 },
+  { id: "demo-gmmy", nombre: "Gmmy", palabrasMeta: ["gmmy"], precio: [29, 49], costo: 7, ventasDia: 0.6, chatsPorVenta: 2, cpa: 0.2 },
 ];
 const ciudades = ["QUITO", "GUAYAQUIL", "CUENCA", "MANTA", "AMBATO", "LOJA", "SANTO DOMINGO", "MACHALA"];
 const transportadoras = ["SERVIENTREGA", "GINTRACOM", "LAAR"];
@@ -39,7 +40,8 @@ for (let d = new Date("2026-09-01T00:00:00Z"); d <= hoy; d.setUTCDate(d.getUTCDa
       const creado = new Date(d.getTime() + azar() * 864e5);
       const mov = new Date(Math.min(hoy.getTime(), creado.getTime() + (1 + azar() * 6) * 864e5));
       pedidos.push({
-        id: String(++id),
+        id: `${T}-${++id}`,
+        tiendaId: T,
         guia: "D00" + (2100000 + id % 100000),
         creadoEn: creado.toISOString(),
         productoId: p.id,
@@ -62,14 +64,20 @@ for (let d = new Date("2026-09-01T00:00:00Z"); d <= hoy; d.setUTCDate(d.getUTCDa
       });
     }
     const gasto = Math.round(p.ventasDia * p.cpa * (0.6 + azar() * 0.8) * 100) / 100;
-    pauta.push({ fecha, productoId: p.id, gasto, conversaciones: Math.round(p.ventasDia * p.chatsPorVenta * (0.6 + azar() * 0.8)) });
+    pauta.push({ fecha, tiendaId: T, productoId: p.id, gasto, conversaciones: Math.round(p.ventasDia * p.chatsPorVenta * (0.6 + azar() * 0.8)) });
   }
 }
 
-const db: BaseDatos = {
-  productos: productos.map(({ id, nombre, palabrasMeta }) => ({ id, nombre, palabrasMeta })),
-  pedidos,
-  pauta,
-  ultimaActualizacion: { dropi: hoy.toISOString(), meta: hoy.toISOString() },
-};
-guardar(db).then(() => console.log(`Datos de ejemplo: ${pedidos.length} pedidos, ${pauta.length} días de pauta.`));
+(async () => {
+  const db: BaseDatos = await leer();
+  const fuera = <X extends { tiendaId: string }>(xs: X[]) => xs.filter((x) => x.tiendaId !== T);
+  db.tiendas = [
+    ...db.tiendas.filter((t) => t.id !== T),
+    { id: T, nombre: "Tienda demo", pais: "EC", moneda: "USD", dropiUrl: "", cuentasMeta: [], ultimaActualizacion: { dropi: hoy.toISOString() } },
+  ];
+  db.productos = [...fuera(db.productos), ...productos.map(({ id, nombre, palabrasMeta }) => ({ id, tiendaId: T, nombre, palabrasMeta }))];
+  db.pedidos = [...fuera(db.pedidos), ...pedidos];
+  db.pauta = [...fuera(db.pauta), ...pauta];
+  await guardar(db);
+  console.log(`Tienda demo: ${pedidos.length} pedidos, ${pauta.length} días de pauta.`);
+})();

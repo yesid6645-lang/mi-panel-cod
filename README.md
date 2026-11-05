@@ -11,9 +11,11 @@ npm run dev       # http://localhost:3000
 npm test          # comprueba las fórmulas contra los números de WinTrack
 ```
 
-## Conectar Dropi
+## Tiendas y Dropi
 
-Copia `.env.example` a `.env.local` y pon `DROPI_TOKEN` (Dropi → Mis integraciones → token).
+Cada tienda (un país) tiene su propio Dropi. En **Tiendas y conexiones → Agregar tienda** pon el nombre,
+el país y el token de Dropi (Dropi → Mis integraciones). El selector del menú cambia de tienda.
+`npm run seed` agrega una "Tienda demo" con datos de ejemplo sin tocar las reales.
 
 ## Conectar Meta (una sola vez)
 
@@ -26,7 +28,8 @@ Copia `.env.example` a `.env.local` y pon `DROPI_TOKEN` (Dropi → Mis integraci
    `http://localhost:3000/api/meta/callback`.
 4. En **Configuración de la app → Básica** copia el **Identificador de la app** → `META_APP_ID`
    y la **Clave secreta** → `META_APP_SECRET`.
-5. Abre el panel → **Productos y conexiones** → **Conectar Meta**, acepta, y marca qué campañas son de cada producto.
+5. Abre el panel → **Tiendas y conexiones** → **Conectar Meta** (una vez para todo el portafolio), elige
+   las cuentas publicitarias de cada tienda y marca qué campañas son de cada producto.
 
 El permiso dura ~60 días; el panel muestra un aviso 7 días antes para que le des a **Renovar conexión**.
 

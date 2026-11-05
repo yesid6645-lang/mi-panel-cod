@@ -11,6 +11,7 @@ function pedido(grupo: GrupoEstado, ganancia: number, total: number, costoDevolu
   const flete = 5;
   return {
     id: String(++n),
+    tiendaId: "t",
     creadoEn: `2026-10-${String((n % 24) + 1).padStart(2, "0")}T12:00:00Z`,
     productoId: "belani",
     productoNombre: "Belani",
@@ -38,7 +39,7 @@ const pedidos: Pedido[] = [
   ...Array.from({ length: 16 }, () => pedido("transito", 7.96, 26.47)),
   pedido("transito", 8.05, 1799.8 - 26.47 * 67),
 ];
-const pauta = [{ fecha: "2026-10-10", productoId: "belani", gasto: 412.79, conversaciones: 959 }];
+const pauta = [{ fecha: "2026-10-10", tiendaId: "t", productoId: "belani", gasto: 412.79, conversaciones: 959 }];
 const r = resumen(pedidos, pauta, { desde: "2026-10-01", hasta: "2026-10-24" });
 const cerca = (a: number | null, b: number, tol = 0.006) =>
   assert.ok(a !== null && Math.abs(a - b) < tol, `esperaba ${b}, obtuve ${a}`);

@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import type { ResultadoSync } from "@/lib/sync";
 
-export function BotonActualizar({ desde, hasta, ultima }: { desde: string; hasta: string; ultima?: string }) {
+export function BotonActualizar({ tiendaId, desde, hasta, ultima }: { tiendaId?: string; desde: string; hasta: string; ultima?: string }) {
   const router = useRouter();
   const [cargando, setCargando] = useState(false);
   const [res, setRes] = useState<ResultadoSync | null>(null);
@@ -13,7 +13,7 @@ export function BotonActualizar({ desde, hasta, ultima }: { desde: string; hasta
     setCargando(true);
     setRes(null);
     try {
-      const r = await fetch("/api/actualizar", { method: "POST", body: JSON.stringify({ desde, hasta }) });
+      const r = await fetch("/api/actualizar", { method: "POST", body: JSON.stringify({ tiendaId, desde, hasta }) });
       setRes(await r.json());
       router.refresh();
     } finally {
@@ -26,7 +26,7 @@ export function BotonActualizar({ desde, hasta, ultima }: { desde: string; hasta
     <div className="flex flex-col items-end gap-1">
       <button
         onClick={actualizar}
-        disabled={cargando}
+        disabled={cargando || !tiendaId}
         className="rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-medium hover:bg-gray-50 disabled:opacity-50"
       >
         {cargando ? "Actualizando…" : "↻ Actualizar Dropi y Meta"}

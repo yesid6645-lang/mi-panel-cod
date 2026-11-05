@@ -1,10 +1,10 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { leer } from "@/lib/db";
+import { leerTienda } from "@/lib/tiendas";
 import { resumen, serieDiaria, decision } from "@/lib/metrics";
 import { periodoDesdeParams, mismoTramoMesAnterior, ventana } from "@/lib/periodo";
 import { ritmoSemanal, composicion, calendarioCpa, estadoActual, diaRecuperado, type ColorDia } from "@/lib/analisis";
-import { usd, pct, veces, dec, nombreMes } from "@/lib/formato";
+import { dinero, pct, veces, dec, nombreMes } from "@/lib/formato";
 
 const nombreDia = (f: string) => `${Number(f.slice(8))} de ${nombreMes(f.slice(0, 7)).split(" ")[0]}`;
 import { SelectorMes } from "@/components/SelectorMes";
@@ -57,7 +57,7 @@ export default async function DetalleProducto({
   const { mes, periodo } = periodoDesdeParams(sp);
   const tab = PESTANAS.some(([k]) => k === sp.tab) ? sp.tab! : "resumen";
 
-  const db = await leer();
+  const { db, tienda } = await leerTienda();
   const producto = db.productos.find((p) => p.id === id);
   if (!producto) notFound();
   const pedidos = db.pedidos.filter((p) => p.productoId === id);
@@ -83,7 +83,7 @@ export default async function DetalleProducto({
           <div>
             <h1 className="text-2xl font-semibold">{producto.nombre}</h1>
             <p className="text-sm text-gray-500">
-              {r.dias} días · {r.diasConVentas} con ventas · {r.ventas} ventas · cifras en USD
+              {r.dias} días · {r.diasConVentas} con ventas · {r.ventas} ventas · cifras en {tienda?.moneda}
             </p>
           </div>
           <SelectorMes mes={mes} base={`/productos/${id}`} />
@@ -125,9 +125,9 @@ export default async function DetalleProducto({
             </div>
             <Chips items={[["Ventas", s7.ventas, s7a.ventas, false], ["Ganancia", s7.esperada, s7a.esperada, false]]} />
             <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-              <Mini titulo="Ganancia" valor={usd(r.bruta)} clase="text-emerald-600" />
-              <Mini titulo="Gasto pub." valor={usd(r.publicidad)} clase="text-red-500" />
-              <Mini titulo="Profit neto" valor={usd(r.esperada)} clase={r.esperada >= 0 ? "text-emerald-600" : "text-red-500"} />
+              <Mini titulo="Ganancia" valor={dinero(r.bruta)} clase="text-emerald-600" />
+              <Mini titulo="Gasto pub." valor={dinero(r.publicidad)} clase="text-red-500" />
+              <Mini titulo="Profit neto" valor={dinero(r.esperada)} clase={r.esperada >= 0 ? "text-emerald-600" : "text-red-500"} />
               <Mini titulo="Devoluciones" valor={String(r.devoluciones)} clase="text-red-500" />
             </div>
             <LineaDiaria datos={serie} campo="ventas" color="#3b82f6" promedio={r.ventas / (r.dias || 1)} />
@@ -214,11 +214,11 @@ function Resumen({ pedidos, pauta, periodo, r, previo }: { pedidos: Parameters<t
         <div className="grid gap-4 md:grid-cols-[1.4fr_1fr_1fr_1fr]">
           <div className="rounded-2xl bg-gray-50 p-5">
             <div className="etiqueta">Ganancia confirmada</div>
-            <div className={`mt-2 text-3xl font-bold ${r.confirmada >= 0 ? "text-emerald-600" : "text-red-500"}`}>{usd(r.confirmada)}</div>
+            <div className={`mt-2 text-3xl font-bold ${r.confirmada >= 0 ? "text-emerald-600" : "text-red-500"}`}>{dinero(r.confirmada)}</div>
             <p className="mt-2 text-sm text-gray-600">Margen de pedidos entregados, después de pauta, devoluciones y fees. No equivale a caja conciliada.</p>
             <div className="mt-3 flex justify-between border-t border-gray-200 pt-3 text-sm">
               <span className="text-gray-500">Si todo lo despachado entrega</span>
-              <span className="font-semibold">{usd(r.esperada)}</span>
+              <span className="font-semibold">{dinero(r.esperada)}</span>
             </div>
           </div>
           <Celda titulo="ROI de entregados" valor={veces(r.roiEntregados)} nota="margen neto entregado ÷ pauta · equilibrio 0x" />
@@ -231,15 +231,15 @@ function Resumen({ pedidos, pauta, periodo, r, previo }: { pedidos: Parameters<t
         <h2 className="font-semibold">Métricas clave</h2>
         <div className="grid divide-gray-100 sm:grid-cols-2 lg:grid-cols-3 [&>*]:border-b [&>*]:border-gray-100">
           <Celda titulo="Ventas" valor={String(r.ventas)} nota={`${dec(r.ventas / (r.dias || 1))} por día`} />
-          <Celda titulo="Ganancia estimada" valor={usd(r.bruta)} nota="antes de pauta y operación" />
-          <Celda titulo="Costo por venta" valor={usd(r.cpa)} nota="CPA promedio" />
+          <Celda titulo="Ganancia estimada" valor={dinero(r.bruta)} nota="antes de pauta y operación" />
+          <Celda titulo="Costo por venta" valor={dinero(r.cpa)} nota="CPA promedio" />
           <Celda titulo="Conversión" valor={pct(r.conversion)} nota={`${r.conversaciones} chats`} />
           <Celda titulo="Devoluciones" valor={pct(r.pctDevolucion)} nota={`${r.devoluciones} devoluciones / ${r.ventas} ventas`} />
           <Celda titulo="Eficiencia de pauta" valor={pct(r.eficienciaPauta)} nota="ganancia limpia sobre pauta" />
-          <Celda titulo="Ganancia bruta por venta" valor={usd(r.brutaPorVenta)} nota="antes de pauta y operación" />
-          <Celda titulo="Costo por chat" valor={usd(r.costoChat)} />
-          <Celda titulo="Costo por venta exitosa" valor={usd(r.cpaExitosa)} nota="excluye devoluciones" />
-          <Celda titulo="Pauta" valor={usd(r.publicidad)} nota="inversión del período" />
+          <Celda titulo="Ganancia bruta por venta" valor={dinero(r.brutaPorVenta)} nota="antes de pauta y operación" />
+          <Celda titulo="Costo por chat" valor={dinero(r.costoChat)} />
+          <Celda titulo="Costo por venta exitosa" valor={dinero(r.cpaExitosa)} nota="excluye devoluciones" />
+          <Celda titulo="Pauta" valor={dinero(r.publicidad)} nota="inversión del período" />
           <Celda titulo="Días con ventas" valor={`${r.diasConVentas}/${r.dias}`} nota={pct(r.dias ? r.diasConVentas / r.dias : null) + " del período"} />
           <Celda titulo="Vs mes anterior" valor={pct(previo.ventas ? (r.ventas - previo.ventas) / previo.ventas : null)} nota="variación en ventas" />
         </div>
@@ -252,8 +252,8 @@ function Resumen({ pedidos, pauta, periodo, r, previo }: { pedidos: Parameters<t
         </h2>
         <BarrasSimples datos={ritmo.porDia.map((x) => ({ nombre: x.nombre, valor: x.promedio, destacado: x === ritmo.masFuerte }))} />
         <div className="grid gap-3 md:grid-cols-2">
-          {ritmo.mejor && <Mini titulo="Tu mejor día del período" valor={`${ritmo.mejor.etiqueta} · ${ritmo.mejor.ventas} ventas · ${usd(ritmo.mejor.bruta)}`} />}
-          {ritmo.rentable && <Mini titulo="Tu día más rentable" valor={`${ritmo.rentable.etiqueta} · ${ritmo.rentable.ventas} ventas · ${usd(ritmo.rentable.esperada)}`} />}
+          {ritmo.mejor && <Mini titulo="Tu mejor día del período" valor={`${ritmo.mejor.etiqueta} · ${ritmo.mejor.ventas} ventas · ${dinero(ritmo.mejor.bruta)}`} />}
+          {ritmo.rentable && <Mini titulo="Tu día más rentable" valor={`${ritmo.rentable.etiqueta} · ${ritmo.rentable.ventas} ventas · ${dinero(ritmo.rentable.esperada)}`} />}
         </div>
       </section>
 
@@ -267,12 +267,12 @@ function Resumen({ pedidos, pauta, periodo, r, previo }: { pedidos: Parameters<t
           </p>
         )}
         <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-          <Celda titulo="Ticket promedio" valor={usd(c.ticket)} nota="pago promedio cliente" />
-          <Celda titulo="Costo unitario" valor={usd(c.costoUnitario)} />
+          <Celda titulo="Ticket promedio" valor={dinero(c.ticket)} nota="pago promedio cliente" />
+          <Celda titulo="Costo unitario" valor={dinero(c.costoUnitario)} />
           <Celda titulo="Unidades / orden" valor={dec(c.unidadesPorOrden, 2)} />
           <Celda titulo="Tasa de upsell" valor={pct(c.tasaUpsell)} nota="pedidos con +1 unidad" />
-          <Celda titulo="Ticket 1 unidad" valor={usd(c.ticketUno)} />
-          <Celda titulo="Ticket con upsell" valor={usd(c.ticketUpsell)} />
+          <Celda titulo="Ticket 1 unidad" valor={dinero(c.ticketUno)} />
+          <Celda titulo="Ticket con upsell" valor={dinero(c.ticketUpsell)} />
         </div>
         <div>
           <div className="mb-2 text-sm font-medium">Combos y variantes</div>
@@ -281,7 +281,7 @@ function Resumen({ pedidos, pauta, periodo, r, previo }: { pedidos: Parameters<t
               const fin = v.ok + v.dev;
               return (
                 <div key={v.nombre} className="rounded-xl border border-gray-100 p-3 text-sm">
-                  <div className="flex justify-between"><span className="font-medium">{v.nombre}</span><span className="text-gray-500">{v.ventas} ventas · {usd(v.precio)}</span></div>
+                  <div className="flex justify-between"><span className="font-medium">{v.nombre}</span><span className="text-gray-500">{v.ventas} ventas · {dinero(v.precio)}</span></div>
                   <div className="mt-2 flex h-2 overflow-hidden rounded-full bg-gray-100">
                     <div className="bg-emerald-500" style={{ width: `${(v.ok / (v.ventas || 1)) * 100}%` }} />
                     <div className="bg-red-400" style={{ width: `${(v.dev / (v.ventas || 1)) * 100}%` }} />
@@ -329,9 +329,9 @@ function RecuperacionSeccion({ pedidos, pauta, periodo, serie, publicidad }: { p
           <div className="etiqueta">Recuperación de la inversión</div>
           <h2 className="text-lg font-semibold">
             {rec.dia ? (
-              <>Recuperaste lo invertido el <span className="text-emerald-600">{nombreDia(rec.dia)}</span> y vas <span className="text-emerald-600">{usd(rec.acumulado)}</span>.</>
+              <>Recuperaste lo invertido el <span className="text-emerald-600">{nombreDia(rec.dia)}</span> y vas <span className="text-emerald-600">{dinero(rec.acumulado)}</span>.</>
             ) : (
-              <>Aún no recuperas lo invertido: vas <span className="text-red-500">{usd(rec.acumulado)}</span>.</>
+              <>Aún no recuperas lo invertido: vas <span className="text-red-500">{dinero(rec.acumulado)}</span>.</>
             )}
           </h2>
           <p className="text-xs text-gray-500">Ganancia operativa acumulada (margen entregado − pauta − devoluciones − fees) frente a $0.</p>
@@ -354,7 +354,7 @@ function Calendario({ dias, cpa }: { dias: ReturnType<typeof calendarioCpa>; cpa
     <section className="tarjeta space-y-4 p-6">
       <div className="flex justify-between">
         <h2 className="font-semibold">Tu costo por venta, día a día</h2>
-        <div className="text-right"><div className="text-xl font-semibold">{usd(cpa)}</div><div className="text-xs text-gray-500">CPA promedio</div></div>
+        <div className="text-right"><div className="text-xl font-semibold">{dinero(cpa)}</div><div className="text-xs text-gray-500">CPA promedio</div></div>
       </div>
       <p className="text-center text-xs text-gray-500">Cada día compara su CPA con el margen que dejaron sus ventas antes de pauta.</p>
       <div className="flex flex-wrap justify-center gap-3 text-xs">
@@ -366,7 +366,7 @@ function Calendario({ dias, cpa }: { dias: ReturnType<typeof calendarioCpa>; cpa
         {["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"].map((d) => <div key={d} className="text-gray-400">{d}</div>)}
         {Array.from({ length: vacios }, (_, i) => <div key={"v" + i} />)}
         {dias.map((d) => (
-          <div key={d.fecha} title={d.cpa !== null ? `CPA ${usd(d.cpa)}` : ""} className={`grid aspect-square place-content-center rounded-lg ${COLOR_DIA[d.color][0]}`}>
+          <div key={d.fecha} title={d.cpa !== null ? `CPA ${dinero(d.cpa)}` : ""} className={`grid aspect-square place-content-center rounded-lg ${COLOR_DIA[d.color][0]}`}>
             <div className="text-sm font-semibold">{Number(d.fecha.slice(8))}</div>
             <div className="text-[10px] opacity-80">{d.ventas}v</div>
           </div>
@@ -408,7 +408,7 @@ function Diagrama({ e, r }: { e: ReturnType<typeof estadoActual>; r: ReturnType<
           </div>
         ))}
       </section>
-      <p className="text-center text-xs text-gray-400">CPA exitosa del período: {usd(r.cpaExitosa)}</p>
+      <p className="text-center text-xs text-gray-400">CPA exitosa del período: {dinero(r.cpaExitosa)}</p>
     </>
   );
 }

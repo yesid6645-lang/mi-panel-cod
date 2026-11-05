@@ -1,8 +1,8 @@
 import Link from "next/link";
-import { leer } from "@/lib/db";
+import { leerTienda } from "@/lib/tiendas";
 import { resumen, colorDevolucion, colorRoi, decision, type Color } from "@/lib/metrics";
 import { periodoDesdeParams, mismoTramoMesAnterior } from "@/lib/periodo";
-import { usd, pct, dec } from "@/lib/formato";
+import { dinero, pct, dec } from "@/lib/formato";
 import { Kpi } from "@/components/Kpi";
 import { SelectorMes } from "@/components/SelectorMes";
 import { BotonActualizar } from "@/components/BotonActualizar";
@@ -27,7 +27,7 @@ const signo = (x: number): Color => (x > 0 ? "excelente" : x < 0 ? "malo" : "sin
 
 export default async function Productos({ searchParams }: { searchParams: Promise<{ mes?: string }> }) {
   const { mes, periodo } = periodoDesdeParams(await searchParams);
-  const db = await leer();
+  const { db, tienda } = await leerTienda();
   const total = resumen(db.pedidos, db.pauta, periodo);
   const previo = resumen(db.pedidos, db.pauta, mismoTramoMesAnterior(periodo));
 
@@ -51,24 +51,24 @@ export default async function Productos({ searchParams }: { searchParams: Promis
           </p>
         </div>
         <SelectorMes mes={mes} base="/productos" />
-        <BotonActualizar desde={periodo.desde} hasta={periodo.hasta} ultima={db.ultimaActualizacion?.dropi && new Date(db.ultimaActualizacion.dropi).toLocaleString("es-CO", { timeZone: "America/Guayaquil" })} />
+        <BotonActualizar desde={periodo.desde} hasta={periodo.hasta} tiendaId={tienda?.id} ultima={tienda?.ultimaActualizacion?.dropi && new Date(tienda.ultimaActualizacion.dropi).toLocaleString("es-CO", { timeZone: "America/Guayaquil" })} />
       </header>
 
       {db.pedidos.length === 0 && (
         <div className="tarjeta p-6 text-sm text-gray-600">
-          Aún no hay datos. Corre <code>npm run seed</code> para ver datos de ejemplo, o configura tus tokens y dale a
+          Aún no hay datos de esta tienda. Pon su token de Dropi en <a href="/configuracion" className="text-blue-600 underline">Tiendas y conexiones</a> y dale a
           Actualizar.
         </div>
       )}
 
       <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <Kpi titulo="Ganancia bruta" valor={usd(total.bruta)} actual={total.bruta} anterior={previo.bruta} />
-        <Kpi titulo="Ganancia esperada" valor={usd(total.esperada)} actual={total.esperada} anterior={previo.esperada} />
-        <Kpi titulo="Ganancia confirmada" valor={usd(total.confirmada)} actual={total.confirmada} anterior={previo.confirmada} />
+        <Kpi titulo="Ganancia bruta" valor={dinero(total.bruta)} actual={total.bruta} anterior={previo.bruta} />
+        <Kpi titulo="Ganancia esperada" valor={dinero(total.esperada)} actual={total.esperada} anterior={previo.esperada} />
+        <Kpi titulo="Ganancia confirmada" valor={dinero(total.confirmada)} actual={total.confirmada} anterior={previo.confirmada} />
         <Kpi titulo="Número de ventas" valor={String(total.ventas)} actual={total.ventas} anterior={previo.ventas} />
-        <Kpi titulo="Publicidad" valor={usd(total.publicidad)} actual={total.publicidad} anterior={previo.publicidad} menorEsMejor />
-        <Kpi titulo="Costo devoluciones" valor={usd(total.costoDevoluciones)} actual={total.costoDevoluciones} anterior={previo.costoDevoluciones} menorEsMejor />
-        <Kpi titulo="Gastos totales" valor={usd(total.gastosTotales)} actual={total.gastosTotales} anterior={previo.gastosTotales} menorEsMejor />
+        <Kpi titulo="Publicidad" valor={dinero(total.publicidad)} actual={total.publicidad} anterior={previo.publicidad} menorEsMejor />
+        <Kpi titulo="Costo devoluciones" valor={dinero(total.costoDevoluciones)} actual={total.costoDevoluciones} anterior={previo.costoDevoluciones} menorEsMejor />
+        <Kpi titulo="Gastos totales" valor={dinero(total.gastosTotales)} actual={total.gastosTotales} anterior={previo.gastosTotales} menorEsMejor />
         <Kpi titulo="Devoluciones" valor={String(total.devoluciones)} actual={total.devoluciones} anterior={previo.devoluciones} menorEsMejor />
       </section>
 
@@ -89,13 +89,13 @@ export default async function Productos({ searchParams }: { searchParams: Promis
                 </td>
                 <td className="px-4 py-3">{r.ventas}</td>
                 <td className="px-4 py-3">{r.conversaciones}</td>
-                <td className="px-4 py-3">{usd(r.publicidad)}</td>
+                <td className="px-4 py-3">{dinero(r.publicidad)}</td>
                 <td className="px-4 py-3 text-emerald-600">{r.entregados}</td>
                 <td className="px-4 py-3">{r.devoluciones}</td>
-                <td className="px-4 py-3 text-red-500">{usd(r.costoDevoluciones)}</td>
-                <td className="px-4 py-3">{usd(r.bruta)}</td>
-                <td className={`px-4 py-3 font-semibold ${TEXTO[signo(r.esperada)]}`}>{usd(r.esperada)}</td>
-                <td className={`px-4 py-3 font-semibold ${TEXTO[colorRoi(r.roiEntregados)]}`}>{usd(r.confirmada)}</td>
+                <td className="px-4 py-3 text-red-500">{dinero(r.costoDevoluciones)}</td>
+                <td className="px-4 py-3">{dinero(r.bruta)}</td>
+                <td className={`px-4 py-3 font-semibold ${TEXTO[signo(r.esperada)]}`}>{dinero(r.esperada)}</td>
+                <td className={`px-4 py-3 font-semibold ${TEXTO[colorRoi(r.roiEntregados)]}`}>{dinero(r.confirmada)}</td>
                 <td className={`px-4 py-3 ${TEXTO[colorDevolucion(r.pctDevolucion)]}`}>{pct(r.pctDevolucion)}</td>
                 <td className="px-4 py-3">
                   <span className="rounded-full bg-gray-100 px-2 py-1 text-xs font-semibold">{dec_.decision}</span>
@@ -106,13 +106,13 @@ export default async function Productos({ searchParams }: { searchParams: Promis
               <td className="px-4 py-3">Promedio diario</td>
               <td className="px-4 py-3">{dec(total.ventas / d)}</td>
               <td className="px-4 py-3">{dec(total.conversaciones / d)}</td>
-              <td className="px-4 py-3">{usd(total.publicidad / d)}</td>
+              <td className="px-4 py-3">{dinero(total.publicidad / d)}</td>
               <td className="px-4 py-3">{dec(total.entregados / d)}</td>
               <td className="px-4 py-3">{dec(total.devoluciones / d)}</td>
-              <td className="px-4 py-3 text-red-500">{usd(total.costoDevoluciones / d)}</td>
-              <td className="px-4 py-3">{usd(total.bruta / d)}</td>
-              <td className="px-4 py-3">{usd(total.esperada / d)}</td>
-              <td className="px-4 py-3">{usd(total.confirmada / d)}</td>
+              <td className="px-4 py-3 text-red-500">{dinero(total.costoDevoluciones / d)}</td>
+              <td className="px-4 py-3">{dinero(total.bruta / d)}</td>
+              <td className="px-4 py-3">{dinero(total.esperada / d)}</td>
+              <td className="px-4 py-3">{dinero(total.confirmada / d)}</td>
               <td className="px-4 py-3">{pct(total.pctDevolucion)}</td>
               <td />
             </tr>

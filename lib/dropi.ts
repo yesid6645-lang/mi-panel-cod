@@ -1,22 +1,18 @@
-import type { Pedido } from "./types";
+import type { Pedido, Tienda } from "./types";
 import { agruparEstado } from "./estados";
 
-// Cliente de la API de integraciones de Dropi Ecuador, autenticado con el token
-// de "Mis integraciones" en el encabezado dropi-integration-key. Ruta y campos
-// confirmados con una llamada real (oct 2026). En el entorno de Claude el
-// encabezado lo agrega la red, por eso DROPI_TOKEN es opcional.
+// Cliente de la API de integraciones de Dropi, autenticado con el token de
+// "Mis integraciones" de cada tienda en el encabezado dropi-integration-key.
+// Ruta y campos confirmados con Dropi Ecuador (oct 2026). En el entorno de
+// Claude el encabezado lo agrega la red, por eso el token puede faltar.
 
 const RUTA_PEDIDOS = "/integrations/orders/myorders";
 
-function config() {
-  const token = process.env.DROPI_TOKEN;
+export async function traerPedidos(tienda: Tienda, desde: string, hasta: string): Promise<Pedido[]> {
+  const token = tienda.dropiToken ?? process.env[`DROPI_TOKEN_${tienda.id.toUpperCase().replace(/-/g, "_")}`] ?? process.env.DROPI_TOKEN;
   const headers: Record<string, string> = { Accept: "application/json" };
   if (token) headers["dropi-integration-key"] = token;
-  return { headers, base: process.env.DROPI_API_URL ?? "https://api.dropi.ec" };
-}
-
-export async function traerPedidos(desde: string, hasta: string): Promise<Pedido[]> {
-  const { headers, base } = config();
+  const base = tienda.dropiUrl.replace(/\/$/, "");
   const pedidos: Pedido[] = [];
   const tam = 100;
   for (let start = 0; ; start += tam) {
@@ -33,7 +29,7 @@ export async function traerPedidos(desde: string, hasta: string): Promise<Pedido
     if (!res.ok) throw new Error(`Dropi respondió ${res.status}: ${(await res.text()).slice(0, 300)}`);
     const json = await res.json();
     const lote: unknown[] = json.objects ?? [];
-    pedidos.push(...lote.map((o) => mapearPedido(o as Record<string, any>)));
+    pedidos.push(...lote.map((o) => mapearPedido(o as Record<string, any>, tienda.id)));
     if (lote.length < tam) break;
   }
   return pedidos;
@@ -41,18 +37,19 @@ export async function traerPedidos(desde: string, hasta: string): Promise<Pedido
 
 const num = (x: unknown) => (x == null || x === "" ? 0 : Number(x));
 
-export function mapearPedido(o: Record<string, any>): Pedido {
+export function mapearPedido(o: Record<string, any>, tiendaId: string): Pedido {
   const detalles: any[] = o.orderdetails ?? [];
   const prod = detalles[0]?.product ?? {};
   const unidades = detalles.reduce((s, d) => s + num(d.quantity), 0) || 1;
   const estado = String(o.status ?? "");
   const nombre = String(prod.name ?? "Sin producto");
   return {
-    id: String(o.id),
+    id: `${tiendaId}-${o.id}`,
+    tiendaId,
     guia: o.shipping_guide ?? undefined,
     // Dropi entrega la hora local de Ecuador sin zona; se guarda tal cual
     creadoEn: String(o.created_at),
-    productoId: String(prod.id ?? detalles[0]?.product_id ?? "sin-producto"),
+    productoId: `${tiendaId}-${prod.id ?? detalles[0]?.product_id ?? "sin-producto"}`,
     productoNombre: nombre,
     variante: [detalles[0]?.variation?.name ?? nombre, unidades > 1 ? `x${unidades}` : ""].filter(Boolean).join(" "),
     unidades,

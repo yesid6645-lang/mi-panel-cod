@@ -10,14 +10,15 @@ export type GrupoEstado =
   | "cancelado";
 
 export interface Pedido {
-  id: string;
+  id: string; // `${tiendaId}-${id de Dropi}`: los ids de Dropi se repiten entre países
+  tiendaId: string;
   guia?: string;
   creadoEn: string; // ISO
   productoId: string;
   productoNombre: string;
   variante: string; // p. ej. "BELANI FORDYCE x2"
   unidades: number;
-  total: number; // lo que paga el cliente (USD)
+  total: number; // lo que paga el cliente, en la moneda de la tienda
   costoProducto: number; // costo de proveedor del pedido completo
   flete: number; // flete de ida
   costoDevolucion: number; // flete de devolución (solo cuenta si se devuelve)
@@ -34,13 +35,15 @@ export interface Pedido {
 
 export interface PautaDia {
   fecha: string; // YYYY-MM-DD
+  tiendaId: string;
   productoId: string;
-  gasto: number; // USD (ya convertido si la cuenta está en COP)
+  gasto: number; // en la moneda de la tienda (convertido si la cuenta paga en otra)
   conversaciones: number;
 }
 
 export interface Producto {
-  id: string;
+  id: string; // `${tiendaId}-${id de Dropi}`
+  tiendaId: string;
   nombre: string;
   // Campañas de Meta asignadas a mano en Configuración (ids). Si está vacío se
   // usan las palabras: el nombre de campaña contiene alguna de palabrasMeta.
@@ -71,13 +74,26 @@ export interface Gestion {
   actualizado: string; // ISO
 }
 
+/** Una tienda = un país, con su propia cuenta de Dropi y sus cuentas publicitarias. */
+export interface Tienda {
+  id: string;
+  nombre: string;
+  pais: string; // código ISO, ver PAISES
+  moneda: string; // moneda en la que Dropi cobra (USD, COP…)
+  dropiUrl: string;
+  dropiToken?: string; // token de Dropi → Mis integraciones; nunca se muestra en pantalla
+  cuentasMeta: string[]; // ids act_XXXX de esta tienda
+  tasaPauta?: number; // unidades de la moneda de la pauta por 1 de la tienda (p. ej. 3900 COP por USD)
+  ultimaActualizacion?: { dropi?: string; meta?: string };
+}
+
 export interface BaseDatos {
+  tiendas: Tienda[];
   productos: Producto[];
   pedidos: Pedido[];
   pauta: PautaDia[];
   gestiones?: Record<string, Gestion>; // por id de pedido
   meta?: ConexionMeta;
-  ultimaActualizacion?: { dropi?: string; meta?: string };
 }
 
 export interface Periodo {

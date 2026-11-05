@@ -9,13 +9,15 @@ export interface ResultadoSync {
 }
 
 /** Lo que hace el botón "Actualizar": trae Dropi y Meta del período y los mezcla con lo guardado. */
-export async function actualizar(per: Periodo): Promise<ResultadoSync> {
+export async function actualizar(tiendaId: string, per: Periodo): Promise<ResultadoSync> {
   const db = await leer();
+  const tienda = db.tiendas.find((t) => t.id === tiendaId);
+  if (!tienda) return { dropi: { ok: false, error: "Esa tienda no existe." } };
   const ahora = new Date().toISOString();
   const out: ResultadoSync = {};
 
   try {
-    const nuevos = await traerPedidos(per.desde, per.hasta);
+    const nuevos = await traerPedidos(tienda, per.desde, per.hasta);
     const previos = new Map(db.pedidos.map((p) => [p.id, p]));
     for (const p of nuevos) {
       const antes = previos.get(p.id);
@@ -23,19 +25,19 @@ export async function actualizar(per: Periodo): Promise<ResultadoSync> {
       p.estadoDesde = antes && antes.estado === p.estado ? antes.estadoDesde : p.ultimoMovimiento ?? ahora;
       previos.set(p.id, p);
       if (!db.productos.some((x) => x.id === p.productoId))
-        db.productos.push({ id: p.productoId, nombre: p.productoNombre, palabrasMeta: [p.productoNombre] });
+        db.productos.push({ id: p.productoId, tiendaId, nombre: p.productoNombre, palabrasMeta: [p.productoNombre] });
     }
     db.pedidos = [...previos.values()];
-    db.ultimaActualizacion = { ...db.ultimaActualizacion, dropi: ahora };
+    tienda.ultimaActualizacion = { ...tienda.ultimaActualizacion, dropi: ahora };
     out.dropi = { ok: true, pedidos: nuevos.length };
   } catch (e) {
     out.dropi = { ok: false, error: (e as Error).message };
   }
 
   try {
-    const filas = await traerPauta(per.desde, per.hasta, db.productos, db.meta);
-    db.pauta = [...db.pauta.filter((x) => x.fecha < per.desde || x.fecha > per.hasta), ...filas];
-    db.ultimaActualizacion = { ...db.ultimaActualizacion, meta: ahora };
+    const filas = await traerPauta(tienda, per.desde, per.hasta, db.productos.filter((p) => p.tiendaId === tiendaId), db.meta);
+    db.pauta = [...db.pauta.filter((x) => x.tiendaId !== tiendaId || x.fecha < per.desde || x.fecha > per.hasta), ...filas];
+    tienda.ultimaActualizacion = { ...tienda.ultimaActualizacion, meta: ahora };
     out.meta = { ok: true, filas: filas.length };
   } catch (e) {
     out.meta = { ok: false, error: (e as Error).message };

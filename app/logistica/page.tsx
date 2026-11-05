@@ -1,8 +1,8 @@
 import Link from "next/link";
-import { leer } from "@/lib/db";
+import { leerTienda } from "@/lib/tiendas";
 import { alertas, linkWhatsapp, diasEnEstado, REGLAS, type Alerta } from "@/lib/alertas";
 import type { EstadoGestion, GrupoEstado, Pedido } from "@/lib/types";
-import { usd } from "@/lib/formato";
+import { dinero } from "@/lib/formato";
 import { BotonActualizar } from "@/components/BotonActualizar";
 import { cambiarGestion } from "./acciones";
 
@@ -46,7 +46,7 @@ const url = (sp: Params, cambios: Partial<Params>) => {
 export default async function Logistica({ searchParams }: { searchParams: Promise<Params> }) {
   const sp = await searchParams;
   const tab = sp.tab === "ordenes" ? "ordenes" : "alertas";
-  const db = await leer();
+  const { db, tienda } = await leerTienda();
   const hoy = new Date().toISOString().slice(0, 10);
   const todas = alertas(db.pedidos, db.gestiones);
   const transportadoras = [...new Set(db.pedidos.map((p) => p.transportadora).filter(Boolean))].sort();
@@ -62,7 +62,7 @@ export default async function Logistica({ searchParams }: { searchParams: Promis
         <BotonActualizar
           desde={new Date(Date.now() - 60 * 864e5).toISOString().slice(0, 10)}
           hasta={hoy}
-          ultima={db.ultimaActualizacion?.dropi && new Date(db.ultimaActualizacion.dropi).toLocaleString("es-CO", { timeZone: "America/Guayaquil" })}
+          tiendaId={tienda?.id} ultima={tienda?.ultimaActualizacion?.dropi && new Date(tienda.ultimaActualizacion.dropi).toLocaleString("es-CO", { timeZone: "America/Guayaquil" })}
         />
       </header>
 
@@ -148,7 +148,7 @@ function Alertas({ todas, sp, transportadoras }: { todas: Alerta[]; sp: Params; 
             </div>
             <div>
               <div className="font-medium">#{a.pedido.guia ?? a.pedido.id}</div>
-              <div className="text-sm text-gray-500">{a.pedido.productoNombre} · {usd(a.pedido.total)}</div>
+              <div className="text-sm text-gray-500">{a.pedido.productoNombre} · {dinero(a.pedido.total)}</div>
               <div className="text-xs text-gray-400">{a.pedido.transportadora}</div>
             </div>
             <div>
@@ -212,7 +212,7 @@ function Ordenes({ pedidos, sp, transportadoras }: { pedidos: Pedido[]; sp: Para
                   {p.ultimoMovimiento && <div className="text-xs text-gray-400">Último movimiento: {p.ultimoMovimiento.slice(0, 16).replace("T", " ")} · {diasEnEstado(p)} días</div>}
                 </td>
                 <td className="px-4 py-3">{p.transportadora}<div className="text-xs text-gray-400">{p.ciudad}</div></td>
-                <td className="px-4 py-3 tabular-nums">{usd(p.total)}</td>
+                <td className="px-4 py-3 tabular-nums">{dinero(p.total)}</td>
               </tr>
             ))}
           </tbody>

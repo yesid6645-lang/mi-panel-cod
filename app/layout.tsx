@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import "./globals.css";
 import { leer } from "@/lib/db";
+import { SelectorTienda } from "@/components/SelectorTienda";
 import { diasParaVencer, DIAS_AVISO } from "@/lib/meta";
 
 export const metadata: Metadata = { title: "Mi Panel COD" };
@@ -16,19 +17,21 @@ const MENU = [
       { href: "/mapa", label: "Mapa logístico", pronto: true },
     ],
   },
-  { seccion: "Herramientas", items: [{ href: "/configuracion", label: "Productos y conexiones" }] },
+  { seccion: "Herramientas", items: [{ href: "/configuracion", label: "Tiendas y conexiones" }] },
 ];
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   // Recordatorio: el permiso de Meta dura ~60 días
-  const dias = diasParaVencer((await leer()).meta);
+  const db = await leer();
+  const dias = diasParaVencer(db.meta);
   const aviso =
     dias === null ? null : dias < 0 ? "Tu conexión con Meta venció: la pauta no se está actualizando." : dias <= DIAS_AVISO ? `Tu conexión con Meta vence en ${dias} días.` : null;
   return (
     <html lang="es">
       <body className="min-h-screen md:flex">
         <aside className="border-b border-gray-200 bg-white p-4 md:sticky md:top-0 md:h-screen md:w-60 md:shrink-0 md:border-b-0 md:border-r">
-          <div className="mb-6 text-lg font-bold">Mi Panel COD</div>
+          <div className="mb-4 text-lg font-bold">Mi Panel COD</div>
+          <SelectorTienda tiendas={db.tiendas.map((t) => ({ id: t.id, nombre: t.nombre }))} />
           <nav className="flex gap-4 overflow-x-auto md:block md:space-y-6">
             {MENU.map((s) => (
               <div key={s.seccion}>

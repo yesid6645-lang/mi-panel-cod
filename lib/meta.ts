@@ -1,4 +1,4 @@
-import type { ConexionMeta, CuentaMeta, PautaDia, Producto } from "./types";
+import type { ConexionMeta, CuentaMeta, PautaDia, Producto, Tienda } from "./types";
 
 // Meta Ads: conexión por inicio de sesión con Facebook (como WinTrack) y lectura
 // del gasto diario y los chats por campaña, asignados a cada producto.
@@ -112,8 +112,10 @@ export interface Campana {
   cuenta: string;
 }
 
-export async function listarCampanas(conexion?: ConexionMeta): Promise<Campana[]> {
-  const { token, cuentas } = origen(conexion);
+export async function listarCampanas(conexion?: ConexionMeta, soloCuentas?: string[]): Promise<Campana[]> {
+  const o = origen(conexion);
+  const token = o.token;
+  const cuentas = soloCuentas ? o.cuentas.filter((c) => soloCuentas.includes(c.id)) : o.cuentas;
   const out: Campana[] = [];
   for (const c of cuentas) {
     const filas = await todo(`/${c.id}/campaigns`, { fields: "name,effective_status", limit: "200" }, token);
@@ -129,9 +131,13 @@ function productoDeCampana(productos: Producto[], id: string, nombre: string) {
   );
 }
 
-export async function traerPauta(desde: string, hasta: string, productos: Producto[], conexion?: ConexionMeta): Promise<PautaDia[]> {
-  const { token, cuentas } = origen(conexion);
-  const copPorUsd = Number(process.env.COP_PER_USD ?? 4000);
+export async function traerPauta(tienda: Tienda, desde: string, hasta: string, productos: Producto[], conexion?: ConexionMeta): Promise<PautaDia[]> {
+  const o = origen(conexion);
+  const token = o.token;
+  const cuentas = tienda.cuentasMeta.length ? o.cuentas.filter((c) => tienda.cuentasMeta.includes(c.id)) : [];
+  if (!cuentas.length) throw new Error(`Elige las cuentas publicitarias de ${tienda.nombre} en Configuración.`);
+  // Si la cuenta paga en otra moneda (p. ej. COP para una tienda en USD) se divide por la tasa
+  const tasa = tienda.tasaPauta ?? Number(process.env.COP_PER_USD ?? 4000);
   const porClave = new Map<string, PautaDia>();
 
   for (const cuenta of cuentas) {
@@ -149,10 +155,10 @@ export async function traerPauta(desde: string, hasta: string, productos: Produc
     for (const fila of filas) {
       const producto = productoDeCampana(productos, fila.campaign_id, fila.campaign_name);
       if (!producto) continue;
-      const gasto = Number(fila.spend) / (fila.account_currency === "COP" ? copPorUsd : 1);
+      const gasto = Number(fila.spend) / (fila.account_currency === tienda.moneda ? 1 : tasa);
       const chats = Number(fila.actions?.find((a: any) => a.action_type === ACCION_CHAT)?.value ?? 0);
       const clave = `${fila.date_start}|${producto.id}`;
-      const previo = porClave.get(clave) ?? { fecha: fila.date_start, productoId: producto.id, gasto: 0, conversaciones: 0 };
+      const previo = porClave.get(clave) ?? { fecha: fila.date_start, tiendaId: tienda.id, productoId: producto.id, gasto: 0, conversaciones: 0 };
       previo.gasto += gasto;
       previo.conversaciones += chats;
       porClave.set(clave, previo);
