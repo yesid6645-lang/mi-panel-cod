@@ -14,7 +14,7 @@ const redirectUri = () => `${appUrl()}/api/meta/callback`;
 function credencialesApp() {
   const id = process.env.META_APP_ID;
   const secreto = process.env.META_APP_SECRET;
-  if (!id || !secreto) throw new Error("Faltan META_APP_ID o META_APP_SECRET en .env.local (ver README).");
+  if (!id || !secreto) throw new Error("Faltan META_APP_ID o META_APP_SECRET: agrégalas en Netlify → Environment variables (o en .env.local en tu computador).");
   return { id, secreto };
 }
 
