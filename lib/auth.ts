@@ -4,7 +4,7 @@ import { createServerClient } from "@supabase/ssr";
 // Inicio de sesión con Supabase Auth (solo cuando el panel está publicado).
 // En tu computador, sin SUPABASE_URL/SUPABASE_ANON_KEY, no se pide sesión.
 
-export const authActiva = () => !!(process.env.SUPABASE_URL && process.env.SUPABASE_ANON_KEY);
+export const authActiva = () => !!(process.env.SUPABASE_URL?.trim() && process.env.SUPABASE_ANON_KEY?.trim());
 
 /** Correos que pueden entrar (coma). Vacío = cualquier usuario creado en Supabase. */
 export const correoPermitido = (correo?: string | null) => {
@@ -14,7 +14,7 @@ export const correoPermitido = (correo?: string | null) => {
 
 export async function clienteAuth() {
   const almacen = await cookies();
-  return createServerClient(process.env.SUPABASE_URL!, process.env.SUPABASE_ANON_KEY!, {
+  return createServerClient(process.env.SUPABASE_URL!.trim(), process.env.SUPABASE_ANON_KEY!.trim(), {
     cookies: {
       getAll: () => almacen.getAll(),
       setAll: (lista) => {

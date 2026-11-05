@@ -3,7 +3,7 @@ import { supabase } from "./almacen/supabase";
 
 // Con SUPABASE_URL y SUPABASE_SERVICE_ROLE_KEY se usa Supabase (panel publicado);
 // sin ellas, el archivo data/db.json (panel en tu computador).
-export const usaSupabase = () => !!(process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY);
+export const usaSupabase = () => !!(process.env.SUPABASE_URL?.trim() && process.env.SUPABASE_SERVICE_ROLE_KEY?.trim());
 const almacen = () => (usaSupabase() ? supabase : archivo);
 
 export const leer = (tiendaId?: string) => almacen().leer(tiendaId);

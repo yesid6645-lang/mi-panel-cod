@@ -17,9 +17,9 @@ const rolJwt = (v?: string) => {
 };
 
 export default async function Diagnostico() {
-  const url = process.env.SUPABASE_URL;
-  const anon = process.env.SUPABASE_ANON_KEY;
-  const servicio = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const url = process.env.SUPABASE_URL?.trim();
+  const anon = process.env.SUPABASE_ANON_KEY?.trim();
+  const servicio = process.env.SUPABASE_SERVICE_ROLE_KEY?.trim();
   const filas: [string, string, boolean][] = [];
 
   let host = "falta";

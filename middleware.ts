@@ -4,8 +4,8 @@ import { createServerClient } from "@supabase/ssr";
 // Publicado: todo el panel (pantallas y API) pide sesión. En tu computador,
 // sin las variables de Supabase, no hace nada.
 export async function middleware(req: NextRequest) {
-  const url = process.env.SUPABASE_URL;
-  const anon = process.env.SUPABASE_ANON_KEY;
+  const url = process.env.SUPABASE_URL?.trim();
+  const anon = process.env.SUPABASE_ANON_KEY?.trim();
   if (!url || !anon) return NextResponse.next();
 
   let res = NextResponse.next({ request: req });
