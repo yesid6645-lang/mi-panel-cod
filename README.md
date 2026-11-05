@@ -1,6 +1,6 @@
-# Mi Panel COD
+# CRM Service
 
-Panel personal de analítica COD (Dropi + Meta Ads), inspirado en WinTrack. Ver `ESPECIFICACION.md`.
+CRM de analítica COD (Dropi + Meta Ads), inspirado en WinTrack. Ver `ESPECIFICACION.md`.
 
 ## Arrancar
 

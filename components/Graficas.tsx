@@ -7,6 +7,9 @@ import {
   BarChart,
   CartesianGrid,
   Cell,
+  ComposedChart,
+  Legend,
+  Line,
   ReferenceLine,
   ResponsiveContainer,
   Tooltip,
@@ -90,6 +93,25 @@ export function BarrasSimples({ datos }: { datos: { nombre: string; valor: numbe
           ))}
         </Bar>
       </BarChart>
+    </ResponsiveContainer>
+  );
+}
+
+/** Dashboard: facturación de cada día (barras) y lo que dejó después de pauta y devoluciones (línea). */
+export function FacturacionDiaria({ datos, simbolo }: { datos: Punto[]; simbolo: string }) {
+  const f = (v: unknown) => `${simbolo} ${Number(v).toLocaleString("es-CO", { maximumFractionDigits: 0 })}`;
+  return (
+    <ResponsiveContainer width="100%" height={280}>
+      <ComposedChart data={datos} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+        <CartesianGrid stroke="#f3f4f6" vertical={false} />
+        <XAxis dataKey="fecha" tickFormatter={dia} tick={eje} axisLine={false} tickLine={false} />
+        <YAxis tick={eje} axisLine={false} tickLine={false} tickFormatter={f} width={80} />
+        <Tooltip formatter={f} labelFormatter={(l) => String(l)} />
+        <Legend wrapperStyle={{ fontSize: 12 }} />
+        <ReferenceLine y={0} stroke="#e5e7eb" />
+        <Bar dataKey="facturacion" name="Facturación" fill="#93c5fd" radius={[4, 4, 0, 0]} />
+        <Line type="monotone" dataKey="esperada" name="Ganancia esperada" stroke="#10b981" strokeWidth={2} dot={false} />
+      </ComposedChart>
     </ResponsiveContainer>
   );
 }

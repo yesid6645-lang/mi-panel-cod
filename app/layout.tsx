@@ -5,10 +5,10 @@ import { leer } from "@/lib/db";
 import { SelectorTienda } from "@/components/SelectorTienda";
 import { diasParaVencer, DIAS_AVISO } from "@/lib/meta";
 
-export const metadata: Metadata = { title: "Mi Panel COD" };
+export const metadata: Metadata = { title: "CRM Service" };
 
 const MENU = [
-  { seccion: "Principal", items: [{ href: "/", label: "Dashboard", pronto: true }] },
+  { seccion: "Principal", items: [{ href: "/", label: "Dashboard" }] },
   {
     seccion: "E-commerce",
     items: [
@@ -30,7 +30,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
     <html lang="es">
       <body className="min-h-screen md:flex">
         <aside className="border-b border-gray-200 bg-white p-4 md:sticky md:top-0 md:h-screen md:w-60 md:shrink-0 md:border-b-0 md:border-r">
-          <div className="mb-4 text-lg font-bold">Mi Panel COD</div>
+          <div className="mb-4 text-lg font-bold">CRM Service</div>
           <SelectorTienda tiendas={db.tiendas.map((t) => ({ id: t.id, nombre: t.nombre }))} />
           <nav className="flex gap-4 overflow-x-auto md:block md:space-y-6">
             {MENU.map((s) => (

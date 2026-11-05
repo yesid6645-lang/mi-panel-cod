@@ -28,7 +28,9 @@ export function ventasDelPeriodo(pedidos: Pedido[], per: Periodo) {
 
 export interface Resumen {
   ventas: number;
-  ingresos: number;
+  ingresos: number; // facturación: lo que suman los pedidos del período
+  facturacionEntregada: number; // lo que ya se cobró (pedidos entregados)
+  facturacionEnCamino: number; // lo que aún puede cobrarse (tránsito, oficina, por despachar)
   bruta: number;
   publicidad: number;
   conversaciones: number;
@@ -80,6 +82,8 @@ export function resumen(pedidos: Pedido[], pauta: PautaDia[], per: Periodo): Res
   return {
     ventas,
     ingresos,
+    facturacionEntregada: suma(entregados, (p) => p.total),
+    facturacionEnCamino: suma(v.filter((p) => ["transito", "oficina", "pendiente"].includes(p.grupo)), (p) => p.total),
     bruta,
     publicidad,
     conversaciones,
@@ -118,6 +122,7 @@ export function serieDiaria(pedidos: Pedido[], pauta: PautaDia[], per: Periodo) 
     return {
       fecha,
       ventas: r.ventas,
+      facturacion: r.ingresos,
       devoluciones: r.devoluciones,
       bruta: r.bruta,
       publicidad: r.publicidad,

@@ -87,7 +87,7 @@ export default async function Productos({ searchParams }: { searchParams: Promis
         <table className="w-full min-w-[1100px] whitespace-nowrap text-sm tabular-nums">
           <thead>
             <tr className="border-b border-gray-200 text-left text-xs font-semibold uppercase text-gray-500">
-              {["Producto", "Ventas", "Chats", "Publicidad", "Entreg.", "Devol.", "C. dev.", "Bruta", "Esperada", "Confirmada", "% dev.", "Decisión"].map((h) => (
+              {["Producto", "Ventas", "Facturación", "Chats", "Publicidad", "Entreg.", "Devol.", "C. dev.", "Bruta", "Esperada", "Confirmada", "% dev.", "Decisión"].map((h) => (
                 <th key={h} className="px-4 py-3">{h}</th>
               ))}
             </tr>
@@ -99,6 +99,7 @@ export default async function Productos({ searchParams }: { searchParams: Promis
                   <Link href={`/productos/${p.id}?mes=${mes}`} className="hover:underline">{p.nombre}</Link>
                 </td>
                 <td className="px-4 py-3">{r.ventas}</td>
+                <td className="px-4 py-3">{dinero(r.ingresos)}</td>
                 <td className="px-4 py-3">{r.conversaciones}</td>
                 <td className="px-4 py-3">{dinero(r.publicidad)}</td>
                 <td className="px-4 py-3 text-emerald-600">{r.entregados}</td>
@@ -116,6 +117,7 @@ export default async function Productos({ searchParams }: { searchParams: Promis
             <tr className="bg-gray-50 font-medium">
               <td className="px-4 py-3">Promedio diario</td>
               <td className="px-4 py-3">{dec(total.ventas / d)}</td>
+              <td className="px-4 py-3">{dinero(total.ingresos / d)}</td>
               <td className="px-4 py-3">{dec(total.conversaciones / d)}</td>
               <td className="px-4 py-3">{dinero(total.publicidad / d)}</td>
               <td className="px-4 py-3">{dec(total.entregados / d)}</td>

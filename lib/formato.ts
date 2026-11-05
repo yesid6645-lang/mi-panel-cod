@@ -14,6 +14,8 @@ export const fijarMoneda = (moneda: string) => {
 const SIMBOLO: Record<string, string> = { USD: "US$", COP: "$", PEN: "S/", CLP: "$", MXN: "MX$", GTQ: "Q", ARS: "$", PYG: "₲" };
 const SIN_DECIMALES = new Set(["COP", "CLP", "PYG", "ARS"]);
 
+export const simboloMoneda = () => SIMBOLO[actual().moneda] ?? actual().moneda;
+
 export const dinero = (x: number | null) => {
   if (x === null) return "—";
   const m = actual().moneda;
