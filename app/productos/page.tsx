@@ -4,6 +4,7 @@ import { resumen, colorDevolucion, colorRoi, decision, type Color } from "@/lib/
 import { periodoDesdeParams, mismoTramoMesAnterior } from "@/lib/periodo";
 import { dinero, pct, dec } from "@/lib/formato";
 import { Kpi } from "@/components/Kpi";
+import { explicar } from "@/lib/explicaciones";
 import { SelectorMes } from "@/components/SelectorMes";
 import { BotonActualizar } from "@/components/BotonActualizar";
 
@@ -73,14 +74,14 @@ export default async function Productos({ searchParams }: { searchParams: Promis
       )}
 
       <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <Kpi titulo="Ganancia bruta" valor={dinero(total.bruta)} actual={total.bruta} anterior={previo.bruta} />
-        <Kpi titulo="Ganancia esperada" valor={dinero(total.esperada)} actual={total.esperada} anterior={previo.esperada} />
-        <Kpi titulo="Ganancia confirmada" valor={dinero(total.confirmada)} actual={total.confirmada} anterior={previo.confirmada} />
-        <Kpi titulo="Número de ventas" valor={String(total.ventas)} actual={total.ventas} anterior={previo.ventas} />
-        <Kpi titulo="Publicidad" valor={dinero(total.publicidad)} actual={total.publicidad} anterior={previo.publicidad} menorEsMejor />
-        <Kpi titulo="Costo devoluciones" valor={dinero(total.costoDevoluciones)} actual={total.costoDevoluciones} anterior={previo.costoDevoluciones} menorEsMejor />
-        <Kpi titulo="Gastos totales" valor={dinero(total.gastosTotales)} actual={total.gastosTotales} anterior={previo.gastosTotales} menorEsMejor />
-        <Kpi titulo="Devoluciones" valor={String(total.devoluciones)} actual={total.devoluciones} anterior={previo.devoluciones} menorEsMejor />
+        <Kpi ayuda={explicar("bruta", total)} titulo="Ganancia bruta" valor={dinero(total.bruta)} actual={total.bruta} anterior={previo.bruta} />
+        <Kpi ayuda={explicar("esperada", total)} titulo="Ganancia esperada" valor={dinero(total.esperada)} actual={total.esperada} anterior={previo.esperada} />
+        <Kpi ayuda={explicar("confirmada", total)} titulo="Ganancia confirmada" valor={dinero(total.confirmada)} actual={total.confirmada} anterior={previo.confirmada} />
+        <Kpi ayuda={explicar("ventas", total)} titulo="Número de ventas" valor={String(total.ventas)} actual={total.ventas} anterior={previo.ventas} />
+        <Kpi ayuda={explicar("publicidad", total)} titulo="Publicidad" valor={dinero(total.publicidad)} actual={total.publicidad} anterior={previo.publicidad} menorEsMejor />
+        <Kpi ayuda={explicar("costoDevoluciones", total)} titulo="Costo devoluciones" valor={dinero(total.costoDevoluciones)} actual={total.costoDevoluciones} anterior={previo.costoDevoluciones} menorEsMejor />
+        <Kpi ayuda={explicar("gastosTotales", total)} titulo="Gastos totales" valor={dinero(total.gastosTotales)} actual={total.gastosTotales} anterior={previo.gastosTotales} menorEsMejor />
+        <Kpi ayuda={explicar("devoluciones", total)} titulo="Devoluciones" valor={String(total.devoluciones)} actual={total.devoluciones} anterior={previo.devoluciones} menorEsMejor />
       </section>
 
       <section className="tarjeta overflow-x-auto">

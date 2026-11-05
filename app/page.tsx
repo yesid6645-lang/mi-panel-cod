@@ -6,6 +6,7 @@ import { estadoActual } from "@/lib/analisis";
 import { alertas } from "@/lib/alertas";
 import { dinero, pct, veces, simboloMoneda } from "@/lib/formato";
 import { Kpi } from "@/components/Kpi";
+import { explicar } from "@/lib/explicaciones";
 import { SelectorMes } from "@/components/SelectorMes";
 import { BotonActualizar } from "@/components/BotonActualizar";
 import { FacturacionDiaria } from "@/components/Graficas";
@@ -52,14 +53,14 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
       )}
 
       <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <Kpi titulo="Facturación" valor={dinero(r.ingresos)} actual={r.ingresos} anterior={previo.ingresos} nota="lo que suman los pedidos del mes" />
-        <Kpi titulo="Facturación entregada" valor={dinero(r.facturacionEntregada)} actual={r.facturacionEntregada} anterior={previo.facturacionEntregada} nota="ya cobrado al cliente" />
-        <Kpi titulo="Ganancia esperada" valor={dinero(r.esperada)} actual={r.esperada} anterior={previo.esperada} nota="si todo lo despachado se entrega" />
-        <Kpi titulo="Ganancia confirmada" valor={dinero(r.confirmada)} actual={r.confirmada} anterior={previo.confirmada} nota="solo entregados, menos pauta y devoluciones" />
-        <Kpi titulo="Ganancia bruta" valor={dinero(r.bruta)} actual={r.bruta} anterior={previo.bruta} nota="antes de pauta y devoluciones" />
-        <Kpi titulo="Ventas" valor={String(r.ventas)} actual={r.ventas} anterior={previo.ventas} />
-        <Kpi titulo="Tasa de devolución" valor={pct(r.pctDevolucion)} actual={r.pctDevolucion ?? 0} anterior={previo.pctDevolucion ?? 0} menorEsMejor />
-        <Kpi titulo="Publicidad" valor={dinero(r.publicidad)} nota={r.publicidad ? `ROAS ${veces(r.roas)} · CPA ${dinero(r.cpa)}` : "conecta Meta para ver la pauta"} />
+        <Kpi ayuda={explicar("facturacion", r)} titulo="Facturación" valor={dinero(r.ingresos)} actual={r.ingresos} anterior={previo.ingresos} nota="lo que suman los pedidos del mes" />
+        <Kpi ayuda={explicar("facturacionEntregada", r)} titulo="Facturación entregada" valor={dinero(r.facturacionEntregada)} actual={r.facturacionEntregada} anterior={previo.facturacionEntregada} nota="ya cobrado al cliente" />
+        <Kpi ayuda={explicar("esperada", r)} titulo="Ganancia esperada" valor={dinero(r.esperada)} actual={r.esperada} anterior={previo.esperada} nota="si todo lo despachado se entrega" />
+        <Kpi ayuda={explicar("confirmada", r)} titulo="Ganancia confirmada" valor={dinero(r.confirmada)} actual={r.confirmada} anterior={previo.confirmada} nota="solo entregados, menos pauta y devoluciones" />
+        <Kpi ayuda={explicar("bruta", r)} titulo="Ganancia bruta" valor={dinero(r.bruta)} actual={r.bruta} anterior={previo.bruta} nota="antes de pauta y devoluciones" />
+        <Kpi ayuda={explicar("ventas", r)} titulo="Ventas" valor={String(r.ventas)} actual={r.ventas} anterior={previo.ventas} />
+        <Kpi ayuda={explicar("pctDevolucion", r)} titulo="Tasa de devolución" valor={pct(r.pctDevolucion)} actual={r.pctDevolucion ?? 0} anterior={previo.pctDevolucion ?? 0} menorEsMejor />
+        <Kpi ayuda={explicar("publicidad", r)} titulo="Publicidad" valor={dinero(r.publicidad)} nota={r.publicidad ? `ROAS ${veces(r.roas)} · CPA ${dinero(r.cpa)}` : "conecta Meta para ver la pauta"} />
       </section>
 
       <section className="grid gap-4 lg:grid-cols-[2fr_1fr]">
