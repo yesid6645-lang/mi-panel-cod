@@ -65,7 +65,7 @@ export default async function DetalleProducto({
 
   const r = resumen(pedidos, pauta, periodo);
   const previo = resumen(pedidos, pauta, mismoTramoMesAnterior(periodo));
-  const d = decision(r);
+  const d = decision(r, resumen(pedidos, pauta, ventana(periodo, 7, 0)));
   const serie = serieDiaria(pedidos, pauta, periodo);
   const ultimos7 = ventana(periodo, 7, 0);
   const anteriores7 = ventana(periodo, 7, 7);
@@ -232,7 +232,7 @@ function Resumen({ pedidos, pauta, periodo, r, previo }: { pedidos: Parameters<t
         <div className="grid divide-gray-100 sm:grid-cols-2 lg:grid-cols-3 [&>*]:border-b [&>*]:border-gray-100">
           <Celda titulo="Ventas" valor={String(r.ventas)} nota={`${dec(r.ventas / (r.dias || 1))} por día`} />
           <Celda titulo="Ganancia estimada" valor={dinero(r.bruta)} nota="antes de pauta y operación" />
-          <Celda titulo="Costo por venta" valor={dinero(r.cpa)} nota="CPA promedio" />
+          <Celda titulo="Costo por venta" valor={dinero(r.cpa)} nota={`CPA promedio · máximo rentable ${dinero(r.cpaMaximo)}`} />
           <Celda titulo="Conversión" valor={pct(r.conversion)} nota={`${r.conversaciones} chats`} />
           <Celda titulo="Devoluciones" valor={pct(r.pctDevolucion)} nota={`${r.devoluciones} devoluciones / ${r.ventas} ventas`} />
           <Celda titulo="Eficiencia de pauta" valor={pct(r.eficienciaPauta)} nota="ganancia limpia sobre pauta" />

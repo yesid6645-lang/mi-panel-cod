@@ -16,12 +16,15 @@ const SIN_DECIMALES = new Set(["COP", "CLP", "PYG", "ARS"]);
 
 export const simboloMoneda = () => SIMBOLO[actual().moneda] ?? actual().moneda;
 
-export const dinero = (x: number | null) => {
+/** Monto en una moneda dada (para pantallas que muestran varias tiendas). */
+export const dineroEn = (x: number | null, m: string) => {
   if (x === null) return "—";
-  const m = actual().moneda;
   const f = SIN_DECIMALES.has(m) ? n0 : n2;
   return `${x < 0 ? "-" : ""}${SIMBOLO[m] ?? m} ${f.format(Math.abs(x))}`;
 };
+
+/** Monto en la moneda de la tienda que se está viendo. */
+export const dinero = (x: number | null) => dineroEn(x, actual().moneda);
 export const pct = (x: number | null) => (x === null ? "—" : `${n1.format(x * 100)}%`);
 export const veces = (x: number | null) => (x === null ? "—" : `${n2.format(x)}x`);
 export const dec = (x: number | null, d = 1) =>

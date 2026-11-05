@@ -2,6 +2,7 @@ import { cookies } from "next/headers";
 import { leer } from "./db";
 import { fijarMoneda } from "./formato";
 import type { BaseDatos, Tienda } from "./types";
+import { aplicarCostos } from "./costos";
 
 // Países de Dropi. Solo Ecuador está confirmado con una llamada real; si otro
 // país usa otra dirección, se corrige en Configuración → tienda.
@@ -22,7 +23,8 @@ export const COOKIE_TIENDA = "tienda";
 /** Los datos de una sola tienda, con la misma forma que la base completa. */
 export function vista(db: BaseDatos, tiendaId: string): BaseDatos {
   const de = <T extends { tiendaId: string }>(xs: T[]) => xs.filter((x) => x.tiendaId === tiendaId);
-  return { ...db, productos: de(db.productos), pedidos: de(db.pedidos), pauta: de(db.pauta) };
+  const productos = de(db.productos);
+  return { ...db, productos, pedidos: aplicarCostos(de(db.pedidos), productos), pauta: de(db.pauta) };
 }
 
 /**

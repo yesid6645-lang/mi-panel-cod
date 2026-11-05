@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { leerTienda } from "@/lib/tiendas";
 import { resumen, colorDevolucion, colorRoi, decision, type Color } from "@/lib/metrics";
-import { periodoDesdeParams, mismoTramoMesAnterior } from "@/lib/periodo";
+import { periodoDesdeParams, mismoTramoMesAnterior, ventana } from "@/lib/periodo";
 import { dinero, pct, dec } from "@/lib/formato";
 import { Kpi } from "@/components/Kpi";
 import { explicar } from "@/lib/explicaciones";
@@ -37,7 +37,8 @@ export default async function Productos({ searchParams }: { searchParams: Promis
       const pedidos = db.pedidos.filter((x) => x.productoId === p.id);
       const pauta = db.pauta.filter((x) => x.productoId === p.id);
       const r = resumen(pedidos, pauta, periodo);
-      return { p, r, d: decision(r) };
+      const r7 = resumen(pedidos, pauta, ventana(periodo, 7, 0));
+      return { p, r, r7, d: decision(r, r7) };
     })
     .sort((a, b) => b.r.ventas - a.r.ventas);
 
@@ -88,13 +89,13 @@ export default async function Productos({ searchParams }: { searchParams: Promis
         <table className="w-full min-w-[1100px] whitespace-nowrap text-sm tabular-nums">
           <thead>
             <tr className="border-b border-gray-200 text-left text-xs font-semibold uppercase text-gray-500">
-              {["Producto", "Ventas", "Facturación", "Chats", "Publicidad", "Entreg.", "Devol.", "C. dev.", "Bruta", "Esperada", "Confirmada", "% dev.", "Decisión"].map((h) => (
+              {["Producto", "Ventas", "Facturación", "Chats", "Publicidad", "Entreg.", "Devol.", "C. dev.", "Bruta", "Esperada", "Confirmada", "% dev.", "CPA 7d / máx.", "Decisión"].map((h) => (
                 <th key={h} className="px-4 py-3">{h}</th>
               ))}
             </tr>
           </thead>
           <tbody>
-            {filas.map(({ p, r, d: dec_ }) => (
+            {filas.map(({ p, r, r7, d: dec_ }) => (
               <tr key={p.id} className="border-b border-gray-100 hover:bg-gray-50">
                 <td className="px-4 py-3 font-medium">
                   <Link href={`/productos/${p.id}?mes=${mes}`} className="hover:underline">{p.nombre}</Link>
@@ -110,6 +111,10 @@ export default async function Productos({ searchParams }: { searchParams: Promis
                 <td className={`px-4 py-3 font-semibold ${TEXTO[signo(r.esperada)]}`}>{dinero(r.esperada)}</td>
                 <td className={`px-4 py-3 font-semibold ${TEXTO[colorRoi(r.roiEntregados)]}`}>{dinero(r.confirmada)}</td>
                 <td className={`px-4 py-3 ${TEXTO[colorDevolucion(r.pctDevolucion)]}`}>{pct(r.pctDevolucion)}</td>
+                <td className="px-4 py-3" title="CPA de los últimos 7 días frente al máximo que puedes pagar por venta sin perder">
+                  <span className={r7.cpa !== null && r.cpaMaximo !== null && r7.cpa > r.cpaMaximo ? "font-semibold text-red-500" : "text-gray-700"}>{dinero(r7.cpa)}</span>
+                  <span className="text-gray-400"> / {dinero(r.cpaMaximo)}</span>
+                </td>
                 <td className="px-4 py-3">
                   <span className="rounded-full bg-gray-100 px-2 py-1 text-xs font-semibold">{dec_.decision}</span>
                 </td>
@@ -128,6 +133,7 @@ export default async function Productos({ searchParams }: { searchParams: Promis
               <td className="px-4 py-3">{dinero(total.esperada / d)}</td>
               <td className="px-4 py-3">{dinero(total.confirmada / d)}</td>
               <td className="px-4 py-3">{pct(total.pctDevolucion)}</td>
+              <td />
               <td />
             </tr>
           </tbody>

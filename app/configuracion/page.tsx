@@ -172,6 +172,10 @@ function CamposTienda({ tienda, meta }: { tienda?: Tienda; meta?: ConexionMeta }
         <span className="font-medium">Tasa de la pauta <span className="font-normal text-gray-400">(si la cuenta paga en otra moneda)</span></span>
         <input name="tasaPauta" type="number" step="any" defaultValue={tienda?.tasaPauta} placeholder="p. ej. 3900 COP por 1 USD" className={campo} />
       </label>
+      <label className="space-y-1 text-sm">
+        <span className="font-medium">Tasa a dólares <span className="font-normal text-gray-400">(para la vista general; vacío si vende en USD)</span></span>
+        <input name="tasaUsd" type="number" step="any" defaultValue={tienda?.tasaUsd} placeholder="p. ej. 3900 si vende en COP" className={campo} />
+      </label>
       <fieldset className="space-y-1 text-sm md:col-span-2">
         <legend className="font-medium">Cuentas publicitarias de esta tienda</legend>
         {meta ? (

@@ -20,6 +20,8 @@ export interface Pedido {
   unidades: number;
   total: number; // lo que paga el cliente, en la moneda de la tienda
   costoProducto: number; // costo de proveedor del pedido completo
+  costoDropi?: number; // costoProducto tal como vino de Dropi, antes de aplicar tus costos
+  otrosCostos?: number; // empaque, comisión de recaudo, etc. (de los costos del producto)
   flete: number; // flete de ida
   costoDevolucion: number; // flete de devolución (solo cuenta si se devuelve)
   fees: number; // Fénix, Confío u otros cobros que aplique Dropi
@@ -27,6 +29,7 @@ export interface Pedido {
   grupo: GrupoEstado;
   transportadora: string;
   ciudad: string;
+  provincia?: string;
   cliente: string;
   telefono: string;
   ultimoMovimiento?: string; // ISO
@@ -41,6 +44,14 @@ export interface PautaDia {
   conversaciones: number;
 }
 
+/** Costos que tú defines para que la utilidad sea real (Dropi no los conoce). */
+export interface CostosProducto {
+  costoUnitario?: number; // reemplaza el precio de proveedor que manda Dropi
+  extraPorPedido?: number; // empaque, Fénix, Confío u otros fijos por pedido
+  comisionPct?: number; // % sobre el valor del pedido (p. ej. comisión de recaudo)
+  costoDevolucion?: number; // reemplaza el flete perdido por cada devolución
+}
+
 export interface Producto {
   id: string; // `${tiendaId}-${id de Dropi}`
   tiendaId: string;
@@ -49,6 +60,7 @@ export interface Producto {
   // usan las palabras: el nombre de campaña contiene alguna de palabrasMeta.
   campanasMeta?: string[];
   palabrasMeta: string[];
+  costos?: CostosProducto;
 }
 
 export interface CuentaMeta {
@@ -84,6 +96,7 @@ export interface Tienda {
   dropiToken?: string; // token de Dropi → Mis integraciones; nunca se muestra en pantalla
   cuentasMeta: string[]; // ids act_XXXX de esta tienda
   tasaPauta?: number; // unidades de la moneda de la pauta por 1 de la tienda (p. ej. 3900 COP por USD)
+  tasaUsd?: number; // unidades de la moneda de la tienda por 1 USD, para la vista general
   ultimaActualizacion?: { dropi?: string; meta?: string };
 }
 

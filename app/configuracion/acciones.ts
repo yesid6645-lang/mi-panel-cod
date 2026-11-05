@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
 import { leer, guardar } from "@/lib/db";
 import { PAISES, COOKIE_TIENDA, idTienda } from "@/lib/tiendas";
 
@@ -30,6 +31,7 @@ export async function guardarTienda(form: FormData) {
   const existente = db.tiendas.find((t) => t.id === form.get("id"));
   const token = String(form.get("dropiToken") ?? "").trim();
   const tasa = Number(form.get("tasaPauta"));
+  const tasaUsd = Number(form.get("tasaUsd"));
   const datos = {
     nombre,
     pais,
@@ -37,6 +39,7 @@ export async function guardarTienda(form: FormData) {
     dropiUrl: String(form.get("dropiUrl") ?? "").trim() || base?.dropiUrl || "",
     cuentasMeta: form.getAll("cuentasMeta").map(String),
     tasaPauta: tasa > 0 ? tasa : undefined,
+    tasaUsd: tasaUsd > 0 ? tasaUsd : undefined,
   };
   if (existente) {
     Object.assign(existente, datos);
@@ -66,4 +69,6 @@ export async function eliminarTienda(form: FormData) {
 export async function elegirTienda(form: FormData) {
   (await cookies()).set(COOKIE_TIENDA, String(form.get("tienda")), { path: "/", maxAge: 365 * 86400 });
   revalidatePath("/", "layout");
+  const volver = form.get("volver");
+  if (volver) redirect(String(volver));
 }

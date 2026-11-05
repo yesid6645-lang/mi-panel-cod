@@ -7,14 +7,17 @@ import { diasParaVencer, DIAS_AVISO } from "@/lib/meta";
 
 export const metadata: Metadata = { title: "CRM Service" };
 
-const MENU = [
-  { seccion: "Principal", items: [{ href: "/", label: "Dashboard" }] },
+type ItemMenu = { href: string; label: string; pronto?: boolean };
+
+const MENU: { seccion: string; items: ItemMenu[] }[] = [
+  { seccion: "Principal", items: [{ href: "/", label: "Dashboard" }, { href: "/general", label: "Vista general" }] },
   {
     seccion: "E-commerce",
     items: [
       { href: "/productos", label: "Productos" },
+      { href: "/costos", label: "Costos por producto" },
       { href: "/logistica", label: "Gestión logística" },
-      { href: "/mapa", label: "Mapa logístico", pronto: true },
+      { href: "/mapa", label: "Mapa logístico" },
     ],
   },
   { seccion: "Herramientas", items: [{ href: "/configuracion", label: "Tiendas y conexiones" }] },

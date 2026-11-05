@@ -3,7 +3,7 @@ import type { Pedido, PautaDia, Periodo } from "./types";
 // Fórmulas verificadas contra WinTrack con los números de Belani (oct 2026).
 // Ver ESPECIFICACION.md.
 
-export const gananciaPedido = (p: Pedido) => p.total - p.costoProducto - p.flete;
+export const gananciaPedido = (p: Pedido) => p.total - p.costoProducto - p.flete - (p.otrosCostos ?? 0);
 
 const dia = (iso: string) => iso.slice(0, 10);
 const enPeriodo = (fecha: string, per: Periodo) => fecha >= per.desde && fecha <= per.hasta;
@@ -49,6 +49,7 @@ export interface Resumen {
   roasEquilibrio: number | null;
   roiEntregados: number | null;
   cpa: number | null;
+  cpaMaximo: number | null; // lo máximo que puedes pagar por venta sin perder: (bruta − devoluciones) ÷ ventas
   cpaExitosa: number | null;
   conversion: number | null;
   costoChat: number | null;
@@ -102,6 +103,7 @@ export function resumen(pedidos: Pedido[], pauta: PautaDia[], per: Periodo): Res
     roasEquilibrio: div(ingresos, bruta - costoDevoluciones),
     roiEntregados: div(confirmada, publicidad),
     cpa: div(publicidad, ventas),
+    cpaMaximo: div(bruta - costoDevoluciones, ventas),
     cpaExitosa: div(publicidad, sinDevolver),
     conversion: div(ventas, conversaciones),
     costoChat: div(publicidad, conversaciones),
@@ -162,7 +164,11 @@ export function colorRoi(roi: number | null): Color {
 
 export type Decision = "ESCALAR" | "MANTENER" | "OPTIMIZAR" | "PAUSAR" | "SIN DATOS";
 
-export function decision(r: Resumen): { decision: Decision; motivo: string; siguientePaso: string } {
+/**
+ * Recomendación para un producto. `ultimos7` (opcional) son los últimos 7 días:
+ * si ahí el CPA ya pasó el máximo rentable, se pide pausar aunque el mes vaya bien.
+ */
+export function decision(r: Resumen, ultimos7?: Resumen): { decision: Decision; motivo: string; siguientePaso: string } {
   if (r.ventas < UMBRALES.ventasMinimas)
     return {
       decision: "SIN DATOS",
@@ -170,6 +176,12 @@ export function decision(r: Resumen): { decision: Decision; motivo: string; sigu
       siguientePaso: "Deja correr la pauta hasta tener al menos 10 ventas antes de decidir.",
     };
   const dev = colorDevolucion(r.pctDevolucion);
+  if (ultimos7?.cpa != null && r.cpaMaximo != null && ultimos7.ventas > 0 && ultimos7.cpa > r.cpaMaximo)
+    return {
+      decision: "PAUSAR",
+      motivo: `En los últimos 7 días cada venta costó ${ultimos7.cpa.toFixed(2)} y lo máximo rentable es ${r.cpaMaximo.toFixed(2)}.`,
+      siguientePaso: "Pausa los conjuntos con CPA más alto o cambia creativos; no escales hasta bajar del CPA máximo.",
+    };
   if (r.esperada < 0)
     return {
       decision: "PAUSAR",

@@ -36,7 +36,7 @@ export function explicar(clave: ClaveKpi, r: Resumen): Ayuda {
       };
     case "bruta":
       return {
-        formula: "Por cada pedido: precio de venta − costo del producto − flete. Se suman todos los pedidos del período, antes de publicidad y devoluciones.",
+        formula: "Por cada pedido: precio de venta − costo del producto − flete − otros costos (empaque, comisión… de Costos por producto). Se suman todos los pedidos del período, antes de publicidad y devoluciones.",
         calculo: `${dinero(r.ingresos)} facturado → ${dinero(r.bruta)} de ganancia bruta`,
       };
     case "esperada":
@@ -62,7 +62,9 @@ export function explicar(clave: ClaveKpi, r: Resumen): Ayuda {
     case "publicidad":
       return {
         formula: "Gasto en Meta de las campañas asignadas a los productos de esta tienda, convertido a la moneda de la tienda.",
-        calculo: r.publicidad ? `ROAS ${r.roas?.toFixed(2)}x = ${dinero(r.ingresos)} ÷ ${dinero(r.publicidad)}` : "Aún sin pauta: conecta Meta en Tiendas y conexiones.",
+        calculo: r.publicidad
+          ? `ROAS ${r.roas?.toFixed(2)}x · CPA ${dinero(r.cpa)} (máximo rentable ${dinero(r.cpaMaximo)})`
+          : "Aún sin pauta: conecta Meta en Tiendas y conexiones.",
       };
     case "costoDevoluciones":
       return {

@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { leerTienda } from "@/lib/tiendas";
 import { resumen, serieDiaria, decision } from "@/lib/metrics";
-import { periodoDesdeParams, mismoTramoMesAnterior } from "@/lib/periodo";
+import { periodoDesdeParams, mismoTramoMesAnterior, ventana } from "@/lib/periodo";
 import { estadoActual } from "@/lib/analisis";
 import { alertas } from "@/lib/alertas";
 import { dinero, pct, veces, simboloMoneda } from "@/lib/formato";
@@ -23,8 +23,10 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
   const pendientes = alertas(db.pedidos, db.gestiones).filter((a) => a.bandeja !== "finalizada").length;
 
   const productos = db.productos.map((p) => {
-    const rp = resumen(db.pedidos.filter((x) => x.productoId === p.id), db.pauta.filter((x) => x.productoId === p.id), periodo);
-    return { p, r: rp, d: decision(rp) };
+    const ped = db.pedidos.filter((x) => x.productoId === p.id);
+    const pau = db.pauta.filter((x) => x.productoId === p.id);
+    const rp = resumen(ped, pau, periodo);
+    return { p, r: rp, d: decision(rp, resumen(ped, pau, ventana(periodo, 7, 0))) };
   });
   const atencion = productos.filter((x) => x.d.decision === "PAUSAR" || x.d.decision === "OPTIMIZAR");
   const crecer = productos.filter((x) => x.d.decision === "ESCALAR");
