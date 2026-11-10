@@ -24,7 +24,7 @@ export const COOKIE_TIENDA = "tienda";
 export function vista(db: BaseDatos, tiendaId: string): BaseDatos {
   const de = <T extends { tiendaId: string }>(xs: T[]) => xs.filter((x) => x.tiendaId === tiendaId);
   const productos = de(db.productos);
-  return { ...db, productos, pedidos: aplicarCostos(de(db.pedidos), productos), pauta: de(db.pauta) };
+  return { ...db, productos, pedidos: aplicarCostos(de(db.pedidos), productos), pauta: de(db.pauta), pedidosShopify: de(db.pedidosShopify ?? []) };
 }
 
 /**

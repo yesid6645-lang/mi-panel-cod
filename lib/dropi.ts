@@ -65,6 +65,8 @@ export function mapearPedido(o: Record<string, any>, tiendaId: string): Pedido {
     transportadora: String(o.distribution_company?.name ?? o.shipping_company ?? ""),
     ciudad: String(o.city ?? ""),
     provincia: o.state ? String(o.state) : undefined,
+    origen: o.shop?.type ? String(o.shop.type) : undefined,
+    origenId: o.shop_order_id ? String(o.shop_order_id) : undefined,
     cliente: [o.name, o.surname].filter(Boolean).join(" "),
     telefono: String(o.phone ?? ""),
     ultimoMovimiento: o.updated_at ? String(o.updated_at) : undefined,

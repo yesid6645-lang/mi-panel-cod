@@ -30,6 +30,7 @@ export async function guardarTienda(form: FormData) {
   const token = String(form.get("dropiToken") ?? "").trim();
   const tasa = Number(form.get("tasaPauta"));
   const tasaUsd = Number(form.get("tasaUsd"));
+  const texto = (k: string) => String(form.get(k) ?? "").trim();
   const datos = {
     nombre,
     pais,
@@ -39,14 +40,25 @@ export async function guardarTienda(form: FormData) {
     tasaPauta: tasa > 0 ? tasa : undefined,
     tasaUsd: tasaUsd > 0 ? tasaUsd : undefined,
   };
+  // Shopify: los secretos solo se reemplazan si escribes uno nuevo
+  const dominio = texto("shopifyDominio").replace(/^https?:\/\//, "").replace(/\/.*$/, "");
+  const previo = existente?.shopify;
+  const shopify = dominio
+    ? {
+        dominio,
+        token: texto("shopifyToken") || previo?.token,
+        clientId: texto("shopifyClientId") || previo?.clientId,
+        clientSecret: texto("shopifyClientSecret") || previo?.clientSecret,
+      }
+    : undefined;
   if (existente) {
-    Object.assign(existente, datos);
+    Object.assign(existente, datos, { shopify });
     if (token) existente.dropiToken = token;
     await guardarTiendaDb(existente);
   } else {
     let id = idTienda(nombre);
     while (db.tiendas.some((t) => t.id === id)) id += "-2";
-    await guardarTiendaDb({ id, ...datos, dropiToken: token || undefined });
+    await guardarTiendaDb({ id, ...datos, shopify, dropiToken: token || undefined });
     (await cookies()).set(COOKIE_TIENDA, id, { path: "/", maxAge: 365 * 86400 });
   }
   revalidatePath("/", "layout");

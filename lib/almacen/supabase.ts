@@ -1,5 +1,5 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
-import type { ConexionMeta, Gestion, PautaDia, Pedido, Producto, Tienda } from "../types";
+import type { ConexionMeta, Gestion, PautaDia, Pedido, PedidoShopify, Producto, Tienda } from "../types";
 import type { Almacen } from "./tipo";
 
 // Supabase (Postgres). Cada tabla guarda el objeto completo en `datos` (jsonb)
@@ -46,15 +46,17 @@ async function leerMeta() {
 export const supabase: Almacen = {
   async leer(tiendaId) {
     const filtro: [string, string] | undefined = tiendaId ? ["tienda_id", tiendaId] : undefined;
-    const [tiendas, productos, pedidos, pauta, gestiones, meta] = await Promise.all([
+    const [tiendas, productos, pedidos, pauta, gestiones, meta, pedidosShopify] = await Promise.all([
       todas<Tienda>("tiendas"),
       todas<Producto>("productos", filtro),
       todas<Pedido>("pedidos", filtro),
       todas<PautaDia>("pauta", filtro),
       db().from("gestiones").select("pedido_id, datos").then(revisar) as Promise<{ pedido_id: string; datos: Gestion }[]>,
       leerMeta(),
+      // Tabla agregada después: si aún no existe, sigue sin Shopify
+      todas<PedidoShopify>("shopify", filtro).catch(() => [] as PedidoShopify[]),
     ]);
-    return { tiendas, productos, pedidos, pauta, gestiones: Object.fromEntries(gestiones.map((g) => [g.pedido_id, g.datos])), meta };
+    return { tiendas, productos, pedidos, pauta, pedidosShopify, gestiones: Object.fromEntries(gestiones.map((g) => [g.pedido_id, g.datos])), meta };
   },
   async leerConfig() {
     const [tiendas, meta] = await Promise.all([todas<Tienda>("tiendas"), leerMeta()]);
@@ -70,6 +72,8 @@ export const supabase: Almacen = {
   guardarProductos: (ps) => enLotes(ps, (l) => db().from("productos").upsert(l.map((p) => ({ id: p.id, tienda_id: p.tiendaId, datos: p })))),
   guardarPedidos: (ps) =>
     enLotes(ps, (l) => db().from("pedidos").upsert(l.map((p) => ({ id: p.id, tienda_id: p.tiendaId, creado_en: p.creadoEn, datos: p })))),
+  guardarPedidosShopify: (ps) =>
+    enLotes(ps, (l) => db().from("shopify").upsert(l.map((p) => ({ id: p.id, tienda_id: p.tiendaId, creado_en: p.creadoEn, datos: p })))),
   async reemplazarPauta(tiendaId, desde, hasta, filas) {
     revisar(await db().from("pauta").delete().eq("tienda_id", tiendaId).gte("fecha", desde).lte("fecha", hasta));
     await enLotes(filas, (l) =>

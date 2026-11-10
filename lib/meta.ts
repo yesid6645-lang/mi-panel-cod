@@ -124,14 +124,34 @@ export async function listarCampanas(conexion?: ConexionMeta, soloCuentas?: stri
   return out;
 }
 
-function productoDeCampana(productos: Producto[], id: string, nombre: string) {
+const normal = (t: string) => t.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+
+/** La palabra principal del nombre de Dropi ("BELANI FORDYCE" → "belani"), para reconocer campañas como "Belani - CBO". */
+const palabraClave = (t: string) => normal(t).split(/[^a-z0-9]+/).find((w) => w.length >= 4) ?? normal(t);
+
+/** Campaña → producto: primero la asignación manual; si el producto no tiene, por nombre. */
+export function productoDeCampana(productos: Producto[], id: string, nombre: string) {
+  const n = normal(nombre);
   return (
     productos.find((p) => p.campanasMeta?.includes(id)) ??
-    productos.find((p) => !p.campanasMeta?.length && p.palabrasMeta.some((w) => nombre.toLowerCase().includes(w.toLowerCase())))
+    productos.find((p) => !p.campanasMeta?.length && p.palabrasMeta.some((w) => n.includes(normal(w)) || n.includes(palabraClave(w))))
   );
 }
 
-export async function traerPauta(tienda: Tienda, desde: string, hasta: string, productos: Producto[], conexion?: ConexionMeta): Promise<PautaDia[]> {
+export const SIN_ASIGNAR = "sin-asignar";
+
+export interface ResultadoPauta {
+  filas: PautaDia[];
+  gastoTotal: number;
+  gastoSinAsignar: number;
+  campanasSinAsignar: string[];
+}
+
+/**
+ * Gasto y chats por día y producto. Lo que no se puede asignar a un producto
+ * se guarda como "sin asignar", así el total de la tienda no se pierde.
+ */
+export async function traerPauta(tienda: Tienda, desde: string, hasta: string, productos: Producto[], conexion?: ConexionMeta): Promise<ResultadoPauta> {
   const o = origen(conexion);
   const token = o.token;
   const cuentas = tienda.cuentasMeta.length ? o.cuentas.filter((c) => tienda.cuentasMeta.includes(c.id)) : [];
@@ -139,6 +159,8 @@ export async function traerPauta(tienda: Tienda, desde: string, hasta: string, p
   // Si la cuenta paga en otra moneda (p. ej. COP para una tienda en USD) se divide por la tasa
   const tasa = tienda.tasaPauta ?? Number(process.env.COP_PER_USD ?? 4000);
   const porClave = new Map<string, PautaDia>();
+  const sinAsignar = new Map<string, number>();
+  let gastoTotal = 0;
 
   for (const cuenta of cuentas) {
     const filas = await todo(
@@ -153,16 +175,24 @@ export async function traerPauta(tienda: Tienda, desde: string, hasta: string, p
       token,
     );
     for (const fila of filas) {
-      const producto = productoDeCampana(productos, fila.campaign_id, fila.campaign_name);
-      if (!producto) continue;
       const gasto = Number(fila.spend) / (fila.account_currency === tienda.moneda ? 1 : tasa);
+      if (!gasto) continue;
+      gastoTotal += gasto;
+      const producto = productoDeCampana(productos, fila.campaign_id, fila.campaign_name);
+      if (!producto) sinAsignar.set(fila.campaign_name, (sinAsignar.get(fila.campaign_name) ?? 0) + gasto);
+      const productoId = producto?.id ?? `${tienda.id}-${SIN_ASIGNAR}`;
       const chats = Number(fila.actions?.find((a: any) => a.action_type === ACCION_CHAT)?.value ?? 0);
-      const clave = `${fila.date_start}|${producto.id}`;
-      const previo = porClave.get(clave) ?? { fecha: fila.date_start, tiendaId: tienda.id, productoId: producto.id, gasto: 0, conversaciones: 0 };
+      const clave = `${fila.date_start}|${productoId}`;
+      const previo = porClave.get(clave) ?? { fecha: fila.date_start, tiendaId: tienda.id, productoId, gasto: 0, conversaciones: 0 };
       previo.gasto += gasto;
       previo.conversaciones += chats;
       porClave.set(clave, previo);
     }
   }
-  return [...porClave.values()];
+  return {
+    filas: [...porClave.values()],
+    gastoTotal,
+    gastoSinAsignar: [...sinAsignar.values()].reduce((a, b) => a + b, 0),
+    campanasSinAsignar: [...sinAsignar.entries()].sort((a, b) => b[1] - a[1]).map(([n]) => n),
+  };
 }

@@ -134,6 +134,9 @@ function FormTienda({ tienda, meta, abierta }: { tienda: Tienda; meta?: Conexion
           <span className={`rounded-full px-2 py-1 ${tienda.cuentasMeta.length ? "bg-emerald-50 text-emerald-700" : "bg-gray-100 text-gray-500"}`}>
             Meta {tienda.cuentasMeta.length ? `${tienda.cuentasMeta.length} cuenta(s)` : "sin cuentas"}
           </span>
+          <span className={`rounded-full px-2 py-1 ${tienda.shopify?.dominio ? "bg-emerald-50 text-emerald-700" : "bg-gray-100 text-gray-500"}`}>
+            Shopify {tienda.shopify?.dominio ? "✓" : "sin conectar"}
+          </span>
         </span>
       </summary>
       <p className="mt-2 text-xs text-gray-400">Última actualización de Dropi: {fecha(tienda.ultimaActualizacion?.dropi)}</p>
@@ -176,6 +179,25 @@ function CamposTienda({ tienda, meta }: { tienda?: Tienda; meta?: ConexionMeta }
         <span className="font-medium">Tasa a dólares <span className="font-normal text-gray-400">(para la vista general; vacío si vende en USD)</span></span>
         <input name="tasaUsd" type="number" step="any" defaultValue={tienda?.tasaUsd} placeholder="p. ej. 3900 si vende en COP" className={campo} />
       </label>
+      <fieldset className="grid gap-3 rounded-xl border border-gray-100 p-3 text-sm md:col-span-2 md:grid-cols-2">
+        <legend className="px-1 font-medium">Shopify <span className="font-normal text-gray-400">(opcional)</span></legend>
+        <label className="space-y-1">
+          <span>Dominio de la tienda</span>
+          <input name="shopifyDominio" defaultValue={tienda?.shopify?.dominio} placeholder="mitienda.myshopify.com" className={campo} />
+        </label>
+        <label className="space-y-1">
+          <span>Token de acceso <span className="text-gray-400">(shpat_…)</span></span>
+          <input name="shopifyToken" type="password" autoComplete="off" placeholder={tienda?.shopify?.token ? "•••••••• guardado" : "si creaste la app en el admin de Shopify"} className={campo} />
+        </label>
+        <label className="space-y-1">
+          <span>Client ID <span className="text-gray-400">(app del Dev Dashboard)</span></span>
+          <input name="shopifyClientId" autoComplete="off" placeholder={tienda?.shopify?.clientId ? "guardado" : "o usa client ID + secret"} className={campo} />
+        </label>
+        <label className="space-y-1">
+          <span>Client secret</span>
+          <input name="shopifyClientSecret" type="password" autoComplete="off" placeholder={tienda?.shopify?.clientSecret ? "•••••••• guardado" : ""} className={campo} />
+        </label>
+      </fieldset>
       <fieldset className="space-y-1 text-sm md:col-span-2">
         <legend className="font-medium">Cuentas publicitarias de esta tienda</legend>
         {meta ? (

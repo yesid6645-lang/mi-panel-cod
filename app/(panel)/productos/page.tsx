@@ -43,6 +43,10 @@ export default async function Productos({ searchParams }: { searchParams: Promis
     .sort((a, b) => b.r.ventas - a.r.ventas);
 
   const d = total.dias || 1;
+  // Gasto de campañas que no se pudieron asignar (sí cuenta en los totales de arriba)
+  const sinAsignar = db.pauta
+    .filter((x) => x.productoId.endsWith("-sin-asignar") && x.fecha >= periodo.desde && x.fecha <= periodo.hasta)
+    .reduce((a, x) => a + x.gasto, 0);
   return (
     <div className="mx-auto max-w-7xl space-y-6">
       <header className="flex flex-wrap items-center justify-between gap-4">
@@ -120,6 +124,15 @@ export default async function Productos({ searchParams }: { searchParams: Promis
                 </td>
               </tr>
             ))}
+            {sinAsignar > 0 && (
+              <tr className="border-b border-gray-100 bg-amber-50/50 text-amber-700">
+                <td className="px-4 py-3" colSpan={4}>
+                  Pauta sin asignar a ningún producto · <a href="/configuracion" className="underline">asignar campañas</a>
+                </td>
+                <td className="px-4 py-3">{dinero(sinAsignar)}</td>
+                <td colSpan={9} />
+              </tr>
+            )}
             <tr className="bg-gray-50 font-medium">
               <td className="px-4 py-3">Promedio diario</td>
               <td className="px-4 py-3">{dec(total.ventas / d)}</td>

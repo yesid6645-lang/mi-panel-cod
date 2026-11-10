@@ -5,6 +5,8 @@ import type { EstadoGestion, GrupoEstado, Pedido } from "@/lib/types";
 import { dinero } from "@/lib/formato";
 import { BotonActualizar } from "@/components/BotonActualizar";
 import { cambiarGestion } from "./acciones";
+import { cruzar } from "@/lib/shopify";
+import type { PedidoShopify } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 
@@ -45,10 +47,16 @@ const url = (sp: Params, cambios: Partial<Params>) => {
 
 export default async function Logistica({ searchParams }: { searchParams: Promise<Params> }) {
   const sp = await searchParams;
-  const tab = sp.tab === "ordenes" ? "ordenes" : "alertas";
+  const tab = sp.tab === "ordenes" || sp.tab === "shopify" ? sp.tab : "alertas";
   const { db, tienda } = await leerTienda();
   const hoy = new Date().toISOString().slice(0, 10);
   const todas = alertas(db.pedidos, db.gestiones);
+  // Pedidos de Shopify (últimos 30 días, no cancelados) que no aparecen en Dropi
+  const hace30 = new Date(Date.now() - 30 * 864e5).toISOString().slice(0, 10);
+  const sinDropi = cruzar((db.pedidosShopify ?? []).filter((x) => !x.cancelado && x.creadoEn.slice(0, 10) >= hace30), db.pedidos)
+    .filter((c) => !c.dropi)
+    .map((c) => c.shopify)
+    .sort((a, b) => b.creadoEn.localeCompare(a.creadoEn));
   const transportadoras = [...new Set(db.pedidos.map((p) => p.transportadora).filter(Boolean))].sort();
 
   return (
@@ -67,14 +75,20 @@ export default async function Logistica({ searchParams }: { searchParams: Promis
       </header>
 
       <nav className="flex gap-6 border-b border-gray-200 text-sm">
-        {[["alertas", `Alertas (${todas.filter((a) => a.bandeja !== "finalizada").length})`], ["ordenes", "Todas las órdenes"]].map(([k, l]) => (
+        {[
+          ["alertas", `Alertas (${todas.filter((a) => a.bandeja !== "finalizada").length})`],
+          ["ordenes", "Todas las órdenes"],
+          ...(tienda?.shopify?.dominio ? [["shopify", `Shopify sin Dropi (${sinDropi.length})`]] : []),
+        ].map(([k, l]) => (
           <Link key={k} href={url({}, { tab: k })} className={`-mb-px border-b-2 pb-3 ${tab === k ? "border-blue-600 font-medium text-blue-600" : "border-transparent text-gray-600"}`}>
             {l}
           </Link>
         ))}
       </nav>
 
-      {tab === "alertas" ? <Alertas todas={todas} sp={sp} transportadoras={transportadoras} /> : <Ordenes pedidos={db.pedidos} sp={sp} transportadoras={transportadoras} />}
+      {tab === "alertas" && <Alertas todas={todas} sp={sp} transportadoras={transportadoras} />}
+      {tab === "ordenes" && <Ordenes pedidos={db.pedidos} sp={sp} transportadoras={transportadoras} />}
+      {tab === "shopify" && <SinDropi pedidos={sinDropi} />}
     </div>
   );
 }
@@ -217,6 +231,40 @@ function Ordenes({ pedidos, sp, transportadoras }: { pedidos: Pedido[]; sp: Para
             ))}
           </tbody>
         </table>
+      </div>
+    </div>
+  );
+}
+
+function SinDropi({ pedidos }: { pedidos: PedidoShopify[] }) {
+  const wa = (p: PedidoShopify) => {
+    const tel = p.telefono.replace(/\D/g, "");
+    const numero = tel.length === 9 ? "593" + tel : tel.replace(/^0/, "593");
+    const texto = `Hola ${p.cliente.split(" ")[0] || ""} 👋 Recibimos tu pedido ${p.numero} (${p.productos}). ¿Nos confirmas tu dirección para despacharlo hoy?`;
+    return `https://wa.me/${numero}?text=${encodeURIComponent(texto)}`;
+  };
+  return (
+    <div className="space-y-4">
+      <p className="text-sm text-gray-500">
+        Pedidos de Shopify de los últimos 30 días, no cancelados, que no encontramos en Dropi (ni por número de pedido ni por teléfono). Son ventas que se pueden estar perdiendo: confírmalos o súbelos a Dropi.
+      </p>
+      <div className="tarjeta divide-y divide-gray-100">
+        {pedidos.length === 0 && <div className="p-8 text-center text-sm text-emerald-600">✓ Todos los pedidos de Shopify llegaron a Dropi.</div>}
+        {pedidos.map((p) => (
+          <div key={p.id} className="grid gap-2 p-4 md:grid-cols-[1fr_1.5fr_auto] md:items-center">
+            <div>
+              <div className="font-medium">{p.cliente || "Sin nombre"}</div>
+              <div className="text-sm text-blue-600">{p.telefono}</div>
+              <div className="text-xs text-gray-400">{p.ciudad}</div>
+            </div>
+            <div>
+              <div className="font-medium">{p.numero} · {dinero(p.total)}</div>
+              <div className="text-sm text-gray-500">{p.productos}</div>
+              <div className="text-xs text-gray-400">{p.creadoEn.slice(0, 16).replace("T", " ")}</div>
+            </div>
+            <a href={wa(p)} target="_blank" rel="noreferrer" className="rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-center text-sm text-emerald-700 hover:bg-emerald-100">WhatsApp</a>
+          </div>
+        ))}
       </div>
     </div>
   );

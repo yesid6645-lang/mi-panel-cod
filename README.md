@@ -64,3 +64,14 @@ Luego, en Productos, dale a **Actualizar Dropi y Meta**.
 
 Con Supabase configurado, los datos se guardan allá y el panel pide inicio de sesión; sin esas variables
 usa `data/db.json` y no pide sesión.
+
+## Shopify (opcional, por tienda)
+
+Sirve para ver qué pedidos hechos en Shopify llegaron a Dropi y cuáles no (Dashboard y Gestión logística →
+"Shopify sin Dropi"). En Supabase corre una vez `supabase/02-shopify.sql`. Luego, en cada tienda
+(Tiendas y conexiones) pon el dominio `mitienda.myshopify.com` y una de dos:
+
+- **Token de acceso** (`shpat_…`) de una app creada en el admin de Shopify (Configuración → Apps → Desarrollar apps), o
+- **Client ID + Client secret** de una app del Dev Dashboard (https://dev.shopify.com) instalada en tu tienda.
+
+La app solo necesita el permiso `read_orders`.

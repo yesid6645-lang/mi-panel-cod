@@ -30,6 +30,8 @@ export interface Pedido {
   transportadora: string;
   ciudad: string;
   provincia?: string;
+  origen?: string; // de dónde llegó a Dropi (SHOPIFY, LUCIDBOT…)
+  origenId?: string; // id del pedido en esa tienda (para cruzar con Shopify)
   cliente: string;
   telefono: string;
   ultimoMovimiento?: string; // ISO
@@ -86,6 +88,27 @@ export interface Gestion {
   actualizado: string; // ISO
 }
 
+/** Pedido tal como está en Shopify, para compararlo con Dropi. */
+export interface PedidoShopify {
+  id: string; // `${tiendaId}-${id numérico de Shopify}`
+  tiendaId: string;
+  numero: string; // "#1001"
+  creadoEn: string; // ISO
+  total: number;
+  cancelado: boolean;
+  cliente: string;
+  telefono: string;
+  ciudad: string;
+  productos: string; // "Belani x2, Gummys"
+}
+
+export interface ConexionShopify {
+  dominio: string; // tienda.myshopify.com
+  token?: string; // shpat_… (app creada en el admin)
+  clientId?: string; // app del Dev Dashboard (credenciales de cliente)
+  clientSecret?: string;
+}
+
 /** Una tienda = un país, con su propia cuenta de Dropi y sus cuentas publicitarias. */
 export interface Tienda {
   id: string;
@@ -95,9 +118,10 @@ export interface Tienda {
   dropiUrl: string;
   dropiToken?: string; // token de Dropi → Mis integraciones; nunca se muestra en pantalla
   cuentasMeta: string[]; // ids act_XXXX de esta tienda
+  shopify?: ConexionShopify;
   tasaPauta?: number; // unidades de la moneda de la pauta por 1 de la tienda (p. ej. 3900 COP por USD)
   tasaUsd?: number; // unidades de la moneda de la tienda por 1 USD, para la vista general
-  ultimaActualizacion?: { dropi?: string; meta?: string };
+  ultimaActualizacion?: { dropi?: string; meta?: string; shopify?: string };
 }
 
 export interface BaseDatos {
@@ -105,6 +129,7 @@ export interface BaseDatos {
   productos: Producto[];
   pedidos: Pedido[];
   pauta: PautaDia[];
+  pedidosShopify?: PedidoShopify[];
   gestiones?: Record<string, Gestion>; // por id de pedido
   meta?: ConexionMeta;
 }

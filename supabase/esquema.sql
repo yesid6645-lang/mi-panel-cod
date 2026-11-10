@@ -28,6 +28,13 @@ create table if not exists pauta (
   primary key (tienda_id, fecha, producto_id)
 );
 
+create table if not exists shopify (
+  id text primary key,
+  tienda_id text not null references tiendas(id) on delete cascade,
+  creado_en text,
+  datos jsonb not null
+);
+
 create table if not exists gestiones (
   pedido_id text primary key,
   datos jsonb not null
@@ -45,4 +52,5 @@ alter table productos enable row level security;
 alter table pedidos enable row level security;
 alter table pauta enable row level security;
 alter table gestiones enable row level security;
+alter table shopify enable row level security;
 alter table ajustes enable row level security;

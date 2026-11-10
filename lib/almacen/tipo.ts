@@ -1,4 +1,4 @@
-import type { BaseDatos, ConexionMeta, Gestion, PautaDia, Pedido, Producto, Tienda } from "../types";
+import type { BaseDatos, ConexionMeta, Gestion, PautaDia, Pedido, PedidoShopify, Producto, Tienda } from "../types";
 
 /**
  * Dónde se guardan los datos. En tu computador, un archivo JSON; publicado,
@@ -13,6 +13,7 @@ export interface Almacen {
   eliminarTienda(id: string): Promise<void>;
   guardarProductos(ps: Producto[]): Promise<void>;
   guardarPedidos(ps: Pedido[]): Promise<void>;
+  guardarPedidosShopify(ps: PedidoShopify[]): Promise<void>;
   reemplazarPauta(tiendaId: string, desde: string, hasta: string, filas: PautaDia[]): Promise<void>;
   guardarGestion(pedidoId: string, g: Gestion): Promise<void>;
   guardarMeta(m: ConexionMeta | undefined): Promise<void>;

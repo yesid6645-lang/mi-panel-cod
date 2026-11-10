@@ -38,7 +38,7 @@ export const archivo: Almacen = {
     const db = await cargar();
     if (!tiendaId) return db;
     const de = <T extends { tiendaId: string }>(xs: T[]) => xs.filter((x) => x.tiendaId === tiendaId);
-    return { ...db, productos: de(db.productos), pedidos: de(db.pedidos), pauta: de(db.pauta) };
+    return { ...db, productos: de(db.productos), pedidos: de(db.pedidos), pauta: de(db.pauta), pedidosShopify: de(db.pedidosShopify ?? []) };
   },
   async leerConfig() {
     const { tiendas, meta } = await cargar();
@@ -51,9 +51,11 @@ export const archivo: Almacen = {
       db.productos = db.productos.filter((x) => x.tiendaId !== id);
       db.pedidos = db.pedidos.filter((x) => x.tiendaId !== id);
       db.pauta = db.pauta.filter((x) => x.tiendaId !== id);
+      db.pedidosShopify = (db.pedidosShopify ?? []).filter((x) => x.tiendaId !== id);
     }),
   guardarProductos: (ps) => cambiar((db) => void (db.productos = porId(db.productos, ps))),
   guardarPedidos: (ps) => cambiar((db) => void (db.pedidos = porId(db.pedidos, ps))),
+  guardarPedidosShopify: (ps) => cambiar((db) => void (db.pedidosShopify = porId(db.pedidosShopify ?? [], ps))),
   reemplazarPauta: (tiendaId, desde, hasta, filas) =>
     cambiar((db) => {
       db.pauta = [...db.pauta.filter((x) => x.tiendaId !== tiendaId || x.fecha < desde || x.fecha > hasta), ...filas];

@@ -4,6 +4,8 @@ import { resumen, serieDiaria, decision } from "@/lib/metrics";
 import { periodoDesdeParams, mismoTramoMesAnterior, ventana } from "@/lib/periodo";
 import { estadoActual } from "@/lib/analisis";
 import { alertas } from "@/lib/alertas";
+import { cruzar, resumenShopify } from "@/lib/shopify";
+import { ventasDelPeriodo } from "@/lib/metrics";
 import { dinero, pct, veces, simboloMoneda } from "@/lib/formato";
 import { Kpi } from "@/components/Kpi";
 import { explicar } from "@/lib/explicaciones";
@@ -31,6 +33,10 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
   const atencion = productos.filter((x) => x.d.decision === "PAUSAR" || x.d.decision === "OPTIMIZAR");
   const crecer = productos.filter((x) => x.d.decision === "ESCALAR");
   const t = e.total || 1;
+  const enPeriodo = (iso: string) => iso.slice(0, 10) >= periodo.desde && iso.slice(0, 10) <= periodo.hasta;
+  const shop = tienda?.shopify?.dominio
+    ? resumenShopify(cruzar((db.pedidosShopify ?? []).filter((x) => enPeriodo(x.creadoEn)), db.pedidos))
+    : null;
 
   return (
     <div className="mx-auto max-w-7xl space-y-6">
@@ -113,6 +119,23 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
           <Link href="/logistica" className="inline-block rounded-xl border border-gray-200 px-4 py-2 text-sm hover:bg-gray-50">Ir a Gestión logística →</Link>
         </div>
       </section>
+
+      {shop && (
+        <section className="tarjeta grid gap-4 p-5 md:grid-cols-4">
+          <div>
+            <div className="etiqueta">Shopify</div>
+            <h2 className="font-semibold">Pedidos de la tienda vs. Dropi</h2>
+            <p className="text-xs text-gray-500">Qué pedidos hechos en Shopify llegaron a Dropi</p>
+          </div>
+          <div><div className="text-xs text-gray-500">Pedidos en Shopify</div><div className="text-2xl font-semibold">{shop.pedidos}</div><div className="text-xs text-gray-400">{shop.cancelados} cancelados · {dinero(shop.facturacion)}</div></div>
+          <div><div className="text-xs text-gray-500">Llegaron a Dropi</div><div className="text-2xl font-semibold text-emerald-600">{shop.conDropi}</div><div className="text-xs text-gray-400">{pct(shop.tasaPaso)} de los no cancelados</div></div>
+          <div>
+            <div className="text-xs text-gray-500">No llegaron a Dropi</div>
+            <div className={`text-2xl font-semibold ${shop.sinDropi.length ? "text-red-500" : "text-emerald-600"}`}>{shop.sinDropi.length}</div>
+            {shop.sinDropi.length > 0 && <Link href="/logistica?tab=shopify" className="text-xs text-blue-600 hover:underline">Ver cuáles →</Link>}
+          </div>
+        </section>
+      )}
     </div>
   );
 }

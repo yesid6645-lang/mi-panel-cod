@@ -12,6 +12,7 @@ export const guardarTienda: typeof archivo.guardarTienda = (t) => almacen().guar
 export const eliminarTienda: typeof archivo.eliminarTienda = (id) => almacen().eliminarTienda(id);
 export const guardarProductos: typeof archivo.guardarProductos = (ps) => almacen().guardarProductos(ps);
 export const guardarPedidos: typeof archivo.guardarPedidos = (ps) => almacen().guardarPedidos(ps);
+export const guardarPedidosShopify: typeof archivo.guardarPedidosShopify = (ps) => almacen().guardarPedidosShopify(ps);
 export const reemplazarPauta: typeof archivo.reemplazarPauta = (...a) => almacen().reemplazarPauta(...a);
 export const guardarGestion: typeof archivo.guardarGestion = (id, g) => almacen().guardarGestion(id, g);
 export const guardarMeta: typeof archivo.guardarMeta = (m) => almacen().guardarMeta(m);

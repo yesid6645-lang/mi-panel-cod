@@ -10,6 +10,7 @@ import { supabase } from "../lib/almacen/supabase";
   for (const t of db.tiendas) await supabase.guardarTienda(t);
   await supabase.guardarProductos(db.productos);
   await supabase.guardarPedidos(db.pedidos);
+  await supabase.guardarPedidosShopify(db.pedidosShopify ?? []);
   for (const t of db.tiendas) await supabase.reemplazarPauta(t.id, "2000-01-01", "2100-01-01", db.pauta.filter((x) => x.tiendaId === t.id));
   for (const [id, g] of Object.entries(db.gestiones ?? {})) await supabase.guardarGestion(id, g);
   if (db.meta) await supabase.guardarMeta(db.meta);
